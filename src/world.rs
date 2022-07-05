@@ -1,6 +1,6 @@
 use std::any::Any;
 
-use crate::resources::Resources;
+use crate::{resources::Resources, Entities};
 
 #[derive(Debug, Default)]
 /**
@@ -8,8 +8,10 @@ use crate::resources::Resources;
  */
 pub struct World {
     resources: Resources,
+    entities: Entities,
 }
 
+// Resource stuff
 impl World {
     /**
      * Constructor function. Initialises all contained structs to their default values.
@@ -20,20 +22,19 @@ impl World {
 
     /**
      * Inserts a resource into the World structs inner resource struct. The resource
-     * can later be retrieved using get_resource::<T>() or get_resource_mut::<T>()
+     * can later be retrieved using [get_resource()](struct.World.html#method.get_resource) or [get_resource_mut()](struct.World.html#method.get_resource_mut)
      * 
      * ```
+     * use secs::World;
+     * 
      * struct ImportantResource(String);
      * 
      * let mut world = World::new();
      * world.insert_resource(ImportantResource(String::from("This is important")));
      * 
      * assert_eq!(
-     *      world.resources.values, 
-     *      HashMap::from[
-     *          (TypeId::of::<ImportantResource>(),
-     *          ImportantResource(String::from("This is important"))
-     *      )]
+     *      world.get_resource::<ImportantResource>().unwrap().0, 
+     *      String::from("This is important"),
      * )
      * 
      * ```
@@ -43,10 +44,12 @@ impl World {
     }
 
     /**
-     * Returns an immutable reference to a resource from within the World structs resource object.
-     * Makes use of Resource::get_ref().
+     * Optionally returns an immutable reference to a resource from within the World structs resource object.
+     * Makes use of [Resources::get_ref()](struct.Resources.html#method.get_ref).
      * 
      * ```
+     * use secs::World;
+     * 
      * struct FpsCounter(u16);
      * 
      * let mut world = World::new();
@@ -59,5 +62,49 @@ impl World {
      */
     pub fn get_resource<T: Any>(&self) -> Option<&T> {
         self.resources.get_ref()
+    }
+
+    /**
+     * Optionally returns a mutable reference to a resource within the World structs Resources object.
+     * Makes use of [Resources::get_mut()](struct.Resources.html#method.get_mut).
+     * 
+     * ```
+     * use secs::World;
+     * 
+     * struct Thing(u8);
+     * 
+     * let mut world = World::new();
+     * 
+     * world.insert_resource(Thing(60));
+     * {
+     *     let mut thing = world.get_resource_mut::<Thing>().unwrap();
+     *     thing.0 = 12;
+     * }
+     * let thing2 = world.get_resource::<Thing>().unwrap();
+     * assert_eq!(thing2.0, 12);
+     * ```
+     */
+    pub fn get_resource_mut<T: Any>(&mut self) -> Option<&mut T> {
+        self.resources.get_mut::<T>()
+    }
+
+    /**
+     * Deletes and attempts to return a resource from the World.
+     * 
+     * See the [Resources](struct.Resources.html) documentation for more information.
+     */
+    pub fn delete_resource<T: Any>(&mut self) -> Option<T> {
+        self.resources.delete::<T>()
+    }
+}
+
+// Entity component stuff
+impl World {
+    pub fn register_component<T: Any>(&mut self) {
+        self.entities.register_component::<T>()
+    }
+
+    pub fn spawn(&mut self) -> &mut Entities {
+        self.entities.create_entity()
     }
 }

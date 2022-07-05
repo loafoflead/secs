@@ -14,18 +14,11 @@ impl Resources {
      * Creates and returns a new Resources struct using its Default Implementation.
      * 
      * ```
+     * use secs::Resources;
+     * 
      * struct Health(u8);
      * 
      * let mut resources = Resources::new();
-     * 
-     * assert_eq!(
-     *      resources.values, 
-     *      HashMap::default()
-     * );
-     * assert_eq!(
-     *      resources, 
-     *      Resources::default(),
-     * );
      * ```
      */
     pub fn new() -> Self {
@@ -37,16 +30,16 @@ impl Resources {
      * the Resources struct provided.
      * 
      * ```
+     * use secs::Resources;
+     * 
      * struct Health(u8);
      * 
      * let mut resources = Resources::new();
      * resources.add(Health(10));
      * 
      * assert_eq!(
-     *      resources.values, 
-     *      HashMap::from([
-     *          (TypeId::of::<Health>(), Health(10))
-     *      ])
+     *      resources.get_ref::<Health>().unwrap().0,
+     *      10
      * );
      * ```
      */
@@ -61,12 +54,14 @@ impl Resources {
      * Note: This function internally uses downcast_ref()
      * 
      * ```
+     * use secs::Resources;
+     * 
      * struct Health(f32);
      * 
      * let mut resources = Resources::new();
      * resources.add(Health(42.0));
      * 
-     * let extracted_health = resources.get_ref::<Health>();
+     * let extracted_health = resources.get_ref::<Health>().unwrap();
      * assert_eq!(extracted_health.0, 42.0);
      * ```
      */
@@ -74,6 +69,90 @@ impl Resources {
         let type_id = TypeId::of::<T>();
         if let Some(data) = self.values.get(&type_id) {
             data.downcast_ref()
+        } else {
+            None
+        }
+    }
+
+    /**
+     * Optionally returns a mutable reference to a value of the given type.
+     * 
+     * ```
+     * use secs::Resources;
+     * 
+     * #[derive(Debug, PartialEq)]
+     * struct Health(i32);
+     * 
+     * let mut resources = Resources::new();
+     * resources.add(Health(123));
+     * 
+     * {
+     *     let mut hp = resources.get_mut::<Health>().unwrap();
+     *     assert_eq!(hp.0, 123);
+     *     hp.0 = 42;
+     * }
+     * 
+     * let hp = resources.get_ref::<Health>().unwrap();
+     * assert_eq!(hp.0, 42);
+     * ```
+     */
+    pub fn get_mut<T: Any>(&mut self) -> Option<&mut T> {
+        if let Some(data) = self.values.get_mut(&TypeId::of::<T>()) {
+            data.downcast_mut()
+        } else {
+            None
+        }
+    }
+
+        /**
+     * Attempts to delete and return a resource. 
+     * 
+     * ```
+     * use secs::Resources;
+     * 
+     * #[derive(Debug, PartialEq)]
+     * struct Health(i32);
+     * 
+     * let mut resources = Resources::new();
+     * resources.add(Health(123));
+     * 
+     * let hp = resources.get_ref::<Health>().unwrap();
+     * assert_eq!(hp.0, 123);
+     * 
+     * resources.delete::<Health>();
+     * assert_eq!(resources.get_ref::<Health>(), None);
+     * ```
+     * 
+     * This function tries to return the value that was stored in the Resources struct, and
+     * returns None if the type doesn't exist;
+     * 
+     * ```
+     * use secs::Resources;
+     * 
+     * #[derive(Debug, PartialEq)]
+     * struct Health(i32);
+     * 
+     * struct No;
+     * 
+     * let mut resources = Resources::new();
+     * resources.add(Health(123));
+     * 
+     * let hp = resources.get_ref::<Health>().unwrap();
+     * assert_eq!(hp.0, 123);
+     * 
+     * let res = resources.delete::<Health>();
+     * assert!(res.is_some());
+     * 
+     * let res = resources.delete::<No>();
+     * assert!(!res.is_some());
+     * ```
+     */
+    pub fn delete<T: Any>(&mut self) -> Option<T> {
+        if let Some(data) = self.values.remove(&TypeId::of::<T>())
+        {
+            // We must have a value by this point, or it would have failed to retrieve it from 
+            // the hashmap. (i hope)
+            Some(*data.downcast::<T>().unwrap())
         } else {
             None
         }
@@ -97,15 +176,45 @@ mod tests {
     }
 
     #[test] 
-    fn get_resource() {
+    fn get_resource_mut() {
         let mut resources = Resources::new();
 
         let thing = Thing(12);
         resources.add(thing);
 
+        {
+            let other = resources.get_mut::<Thing>().unwrap();
+            other.0 = 129;
+        }
         let other = resources.get_ref::<Thing>().unwrap();
-        assert_eq!(other.0, 12);
+        assert_eq!(other.0, 129);
     }
 
+    #[test]
+    fn get_resource() {
+        let mut resources = Resources::new();
+        resources.add(Thing(12));
+
+        let thing = resources.get_ref::<Thing>().unwrap();
+        assert_eq!(thing.0, 12);
+    }
+
+    #[test]
+    fn delete_resource() {
+        let mut resources = init_resources();
+
+        resources.delete::<Thing>();
+        assert_eq!(resources.get_ref::<Thing>(), None);
+        assert!(!resources.values.contains_key(&TypeId::of::<Thing>()));
+    }
+
+    fn init_resources() -> Resources {
+        let mut res = Resources::new();
+
+        res.add(Thing(10));
+        res
+    }
+
+    #[derive(Debug, PartialEq)]
     struct Thing(i32);
 }

@@ -1,8 +1,10 @@
 mod resources;
 mod world;
+mod entities;
 
 pub use resources::*;
 pub use world::*;
+pub use entities::*;
 
 #[cfg(test)]
 mod tests {
