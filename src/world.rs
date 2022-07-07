@@ -1,6 +1,6 @@
 use std::any::Any;
 
-use crate::{resources::Resources, Entities};
+use crate::{resources::Resources, Entities, Query};
 
 #[derive(Debug, Default)]
 /**
@@ -106,5 +106,12 @@ impl World {
 
     pub fn spawn(&mut self) -> &mut Entities {
         self.entities.create_entity()
+    }
+}
+
+// Query stuff 
+impl World {
+    pub fn query(&self) -> Query {
+        Query::new(&self.entities)
     }
 }

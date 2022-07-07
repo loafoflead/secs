@@ -1,17 +1,28 @@
+mod query;
+
 use std::{any::{Any, TypeId}, rc::Rc, cell::RefCell, collections::HashMap};
 use eyre::*;
 
-type ComponentType = Option<Rc<RefCell<dyn Any>>>;
+pub use self::query::Query;
+
+type ComponentType = Rc<RefCell<dyn Any>>;
+
 
 #[derive(Debug, Default)]
 pub struct Entities {
-    components: HashMap<TypeId, Vec<ComponentType>>,
+    components: HashMap<TypeId, Vec<Option<ComponentType>>>,
     entity_count: usize,
+
+    bit_masks: HashMap<TypeId, u128>,
+    map: Vec<u128>,
 }
 
 impl Entities {
     pub fn register_component<T: Any + 'static>(&mut self) {
-        self.components.insert(TypeId::of::<T>(), Vec::new());
+        let typeid = TypeId::of::<T>();
+        let bitmask = 2_u128.pow(self.components.len() as u32);
+        self.components.insert(typeid, Vec::new());
+        self.bit_masks.insert(typeid, bitmask);
     }
 
     fn fill_new_component<T: Any>(&mut self) -> Result<()> {
@@ -24,6 +35,9 @@ impl Entities {
         self.components.iter_mut().for_each(|(_key, value)| {
             value.push(None);
         });
+
+        self.map.push(0);
+
         self.entity_count += 1;
         self
     }
@@ -36,15 +50,24 @@ impl Entities {
             self.fill_new_component::<T>()?;
         }
 
+        let map_index = self.map.len() - 1;
+
         if let Some(components) = self.components.get_mut(&data.type_id()) {
             let last_component = components.last_mut().ok_or(ComponentError::NonexistentEntity)?;
+            let typeid = data.type_id();
             *last_component = Some(Rc::new(RefCell::new(data)));
+
+            let bitmask = self.bit_masks.get(&typeid).unwrap();
+            self.map[map_index] |= *bitmask;
         } else {
             bail!("Attempted to add a component that was not registered to an entity.");
         }
         Ok(self)
     }
 
+    pub fn get_bitmask(&self, typeid: &TypeId) -> Option<u128> {
+        self.bit_masks.get(typeid).copied()
+    }
 
 }
 
@@ -71,6 +94,18 @@ mod tests {
         let hp_component = ents.components.get(&TypeId::of::<Health>()).unwrap();
 
         assert_eq!(hp_component.len(), 0);
+        dbg!(ents);
+    }
+
+    #[test]
+    fn bitmask_update_on_register_entities() {
+        let mut ents = Entities::default();
+        ents.register_component::<Health>();
+        ents.register_component::<Id>();
+
+        let hp_component = ents.bit_masks.get(&TypeId::of::<Id>()).unwrap();
+
+        assert_eq!(*hp_component, 1);
         dbg!(ents);
     }
 
@@ -118,6 +153,30 @@ mod tests {
         assert!(hp.len() == speed.len() && hp.len() == ents.entity_count);
         // assert!(speed[0].is_none());
         // assert!(hp[0].is_none());
+
+        Ok(())
+    }
+
+    #[test]
+    fn map_is_updated() -> Result<()> {
+        let mut ents = Entities::default();
+        // ents.register_component::<Health>();
+        // ents.register_component::<Id>();
+
+        ents.create_entity()
+            .insert(Health(100))?
+            .insert(Id(String::from("hi")))?;
+
+        let entity_map = ents.map[0];
+        
+        assert_eq!(entity_map, 3);
+
+        ents.create_entity()
+            .insert(Id(String::from("hi")))?;
+
+        let entity_map = ents.map[1];
+        
+        assert_eq!(entity_map, 2);
 
         Ok(())
     }
