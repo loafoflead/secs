@@ -2,9 +2,11 @@ mod resources;
 mod world;
 mod entities;
 
-pub use resources::*;
-pub use world::*;
-pub use entities::*;
+pub mod prelude {
+    pub use super::resources::*;
+    pub use super::world::*;
+    pub use super::entities::*;
+}
 
 #[cfg(test)]
 mod tests {

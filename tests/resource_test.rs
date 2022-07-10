@@ -1,4 +1,4 @@
-use secs::World;
+use secs::prelude::*;
 
 #[test]
 fn create_and_get_immutable_resource() {
