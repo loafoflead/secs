@@ -60,7 +60,7 @@ impl World {
      assert_eq!(fps.0, 60);
      ``` 
      */
-    pub fn get_resource<T: Any>(&self) -> Option<&T> {
+    pub fn get_resource<T: Any>(&self) -> eyre::Result<&T> {
         self.resources.get_ref()
     }
 
@@ -84,7 +84,7 @@ impl World {
       assert_eq!(thing2.0, 12);
       ```
      */
-    pub fn get_resource_mut<T: Any>(&mut self) -> Option<&mut T> {
+    pub fn get_resource_mut<T: Any>(&mut self) -> eyre::Result<&mut T> {
         self.resources.get_mut::<T>()
     }
 
@@ -93,7 +93,7 @@ impl World {
       
       See the [Resources](struct.Resources.html) documentation for more information.
      */
-    pub fn delete_resource<T: Any>(&mut self) -> Option<T> {
+    pub fn delete_resource<T: Any>(&mut self) -> eyre::Result<T> {
         self.resources.delete::<T>()
     }
 }
@@ -190,6 +190,10 @@ impl World {
      */
     pub fn unregister_component_checked<T: Any>(&mut self) -> eyre::Result<()> {
         self.entities.delete_component_checked::<T>()
+    }
+
+    pub fn delete_entity(&mut self, index: usize) -> eyre::Result<()> {
+        self.entities.delete_entity_by_id(index)
     }
 }
 

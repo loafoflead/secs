@@ -65,12 +65,12 @@ impl Resources {
     assert_eq!(extracted_health.0, 42.0);
     ```
      */
-    pub fn get_ref<T: Any>(&self) -> Option<&T> {
+    pub fn get_ref<T: Any>(&self) -> eyre::Result<&T> {
         let type_id = TypeId::of::<T>();
         if let Some(data) = self.values.get(&type_id) {
-            data.downcast_ref()
+            data.downcast_ref().ok_or(ResourcesError::NonexistentResourceError.into())
         } else {
-            None
+            Err(ResourcesError::NonexistentResourceError.into())
         }
     }
 
@@ -96,11 +96,11 @@ impl Resources {
     assert_eq!(hp.0, 42);
     ```
      */
-    pub fn get_mut<T: Any>(&mut self) -> Option<&mut T> {
+    pub fn get_mut<T: Any>(&mut self) -> eyre::Result<&mut T> {
         if let Some(data) = self.values.get_mut(&TypeId::of::<T>()) {
-            data.downcast_mut()
+            data.downcast_mut().ok_or(ResourcesError::NonexistentResourceError.into())
         } else {
-            None
+            Err(ResourcesError::NonexistentResourceError.into())
         }
     }
 
@@ -147,16 +147,22 @@ impl Resources {
     assert!(!res.is_some());
     ```
      */
-    pub fn delete<T: Any>(&mut self) -> Option<T> {
+    pub fn delete<T: Any>(&mut self) -> eyre::Result<T> {
         if let Some(data) = self.values.remove(&TypeId::of::<T>())
         {
             // We must have a value by this point, or it would have failed to retrieve it from 
             // the hashmap. (i hope)
-            Some(*data.downcast::<T>().unwrap())
+            Ok(*data.downcast::<T>().unwrap())
         } else {
-            None
+            Err(ResourcesError::NonexistentResourceError.into())
         }
     }
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum ResourcesError {
+    #[error("Attempt to access non existent resource.")]
+    NonexistentResourceError,
 }
 
 // Trait implementations
@@ -207,12 +213,13 @@ mod tests {
     }
 
     #[test]
-    fn delete_resource() {
+    fn delete_resource() -> eyre::Result<()> {
         let mut resources = init_resources();
 
-        resources.delete::<Thing>();
-        assert_eq!(resources.get_ref::<Thing>(), None);
+        resources.delete::<Thing>()?;
+        assert!(resources.get_ref::<Thing>().is_err());
         assert!(!resources.values.contains_key(&TypeId::of::<Thing>()));
+        Ok(())
     }
 
     fn init_resources() -> Resources {

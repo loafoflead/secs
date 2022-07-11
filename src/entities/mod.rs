@@ -1,11 +1,13 @@
 mod query;
+mod query_entity;
 
 use std::{any::{Any, TypeId}, rc::Rc, cell::{RefCell}, collections::HashMap};
 use eyre::*;
 
 pub use self::query::Query;
+pub use self::query_entity::QueryEntity;
 
-type ComponentType = Rc<RefCell<dyn Any>>;
+pub type ComponentType = Rc<RefCell<dyn Any>>;
 
 
 #[derive(Debug, Default)]
@@ -17,11 +19,12 @@ type ComponentType = Rc<RefCell<dyn Any>>;
   
   The struct also contains an entity counter to help with automatic registering of components, as well as
   a hashmap of the different bit masks of each component as well as a vector containing the entity id's 
-  in the form of their bit masks.
+  in the form of their bit masks. 'insert_index' serves as a kind of cursor for where the next 'insert' function call
+  will place the new component.
   
   The struct stores a 'map' which is a vector of bitmasks that function essentially as entity id's.
   When an entity is created, a bitmask is appended to this vector with the components the new entity has.
-  So the vector will look something like this (assuming arbitrary entites and components exist in the system):
+  So the vector will look something like this (assuming arbitrary entites and components exist in the system.
   
    map [...0010_1101, ...0111_1111, ...0101_000, ...] where each 1 corresponds to a component the entity has.
   
@@ -37,6 +40,8 @@ pub struct Entities {
 
     bit_masks: HashMap<TypeId, u128>,
     map: Vec<u128>,
+
+    insert_cursor: usize,
 }
 
 impl Entities {
@@ -50,6 +55,7 @@ impl Entities {
         self.bit_masks.insert(typeid, bitmask);
     }
 
+    #[allow(dead_code)]
     /**
       Convenience function used when auto registering new components.
       
@@ -73,8 +79,7 @@ impl Entities {
       |-----------------------------------------------|
      */
     fn fill_new_component<T: Any>(&mut self) {
-        let comps = self.components.get_mut(&TypeId::of::<T>()).unwrap();
-        for _ in 0..self.entity_count { comps.push(None); }
+        self.fill_new_component_checked::<T>().unwrap()
     }
 
     #[allow(dead_code)]
@@ -127,13 +132,19 @@ impl Entities {
       ```
      */
     pub fn create_entity(&mut self) -> &mut Self {
-        self.components.iter_mut().for_each(|(_key, value)| {
-            value.push(None);
-        });
+        if let Some((index, _)) = self.map.iter().enumerate().find(|(_index, map_val)| **map_val == 0) {
+            self.insert_cursor = index;
+        } else {
+            self.components.iter_mut().for_each(|(_key, value)| {
+                value.push(None);
+            });
+    
+            self.map.push(0);
+    
+            self.entity_count += 1;
 
-        self.map.push(0);
-
-        self.entity_count += 1;
+            self.insert_cursor = self.entity_count - 1;
+        }
         self
     }
 
@@ -159,26 +170,7 @@ impl Entities {
       ```
      */
     pub fn insert<T: Any>(&mut self, data: T) -> &mut Self {
-        // auto register new component types
-        if !self.bit_masks.contains_key(&TypeId::of::<T>()) {
-            // register and initialize with default value of none
-            self.register_component::<T>();
-            self.fill_new_component::<T>();
-        }
-
-        let map_index = self.map.len() - 1;
-
-        if let Some(components) = self.components.get_mut(&data.type_id()) {
-            let last_component = components.last_mut().ok_or(ComponentError::NonexistentEntity).unwrap();
-            let typeid = data.type_id();
-            *last_component = Some(Rc::new(RefCell::new(data)));
-
-            let bitmask = self.bit_masks.get(&typeid).unwrap();
-            self.map[map_index] |= *bitmask;
-        } else {
-            panic!("Attempted to add a component that was not registered to an entity.");
-        }
-        self
+        self.insert_checked(data).unwrap()
     }
 
     /**
@@ -210,12 +202,12 @@ impl Entities {
             self.fill_new_component_checked::<T>()?;
         }
 
-        let map_index = self.map.len() - 1;
+        let map_index = self.insert_cursor;
 
         if let Some(components) = self.components.get_mut(&data.type_id()) {
-            let last_component = components.last_mut().ok_or(ComponentError::NonexistentEntity)?;
+            let component = components.get_mut(map_index).ok_or(ComponentError::NonexistentEntity)?;
             let typeid = data.type_id();
-            *last_component = Some(Rc::new(RefCell::new(data)));
+            *component = Some(Rc::new(RefCell::new(data)));
 
             let bitmask = self.bit_masks.get(&typeid).unwrap();
             self.map[map_index] |= *bitmask;
@@ -293,10 +285,7 @@ impl Entities {
       is do an xOr operation on the bitmask of the entity's index given, making this a cheap operation. 
      */
     pub fn delete_component_by_entity_id<T: Any>(&mut self, index: usize) {
-        let typeid = TypeId::of::<T>();
-        let mask = self.bit_masks.get(&typeid).unwrap();
-
-        self.map[index] ^= *mask;
+        self.delete_component_by_entity_id_checked::<T>(index).unwrap()
     }
 
     /**
@@ -331,23 +320,7 @@ impl Entities {
       Panics when applying this function without first creating a new entity with [creat_entity()](struct.Entities.html#method.create_entity).
      */
     pub fn insert_component_into_entity_by_id<T: Any>(&mut self, data: T, map_index: usize) {
-        // auto register new component types
-        if !self.bit_masks.contains_key(&TypeId::of::<T>()) {
-            // register and initialize with default value of none
-            self.register_component::<T>();
-            self.fill_new_component::<T>();
-        }
-
-        if let Some(components) = self.components.get_mut(&data.type_id()) {
-            let replaced_component = components.get_mut(map_index).ok_or(ComponentError::NonexistentEntity).unwrap();
-            let typeid = data.type_id();
-            *replaced_component = Some(Rc::new(RefCell::new(data)));
-
-            let bitmask = self.bit_masks.get(&typeid).unwrap();
-            self.map[map_index] |= *bitmask;
-        } else {
-            panic!("Attempted to add a component that was not registered to an entity.");
-        }
+        self.insert_component_into_entity_by_id_checked(data, map_index).unwrap()
     }
 
     /**
@@ -438,10 +411,7 @@ impl Entities {
     simply xOrs the bitmask of every entity to remove this component from it.
      */
     pub fn delete_component<T: Any>(&mut self) {
-        let (_, bitmask) = self.bit_masks.remove_entry(&TypeId::of::<T>()).unwrap();
-        for component_bitmask in &mut self.map {
-            *component_bitmask ^= bitmask;
-        }
+        self.delete_component_checked::<T>().unwrap()
     }
 
     /**
@@ -486,6 +456,13 @@ impl Entities {
         Ok(())
     }
 
+    pub fn delete_entity_by_id(&mut self, index: usize) -> eyre::Result<()> {
+        let len = self.map.len();
+        *self.map.get_mut(index).ok_or(ComponentError::IndexOutOfBoundsError { expected: len, found: index })? = 0;
+
+        Ok(())
+    }
+
     /**
     Convenience function to get the bitmask of a given TypeId. 
     
@@ -510,14 +487,69 @@ enum ComponentError {
     #[error("This error should never happen. (Failed to fill fields of newly generated component on the fly)")]
     AutomaticRegistrationError,
     #[error("Attempt to make use of unregistered component.")]
-    UnregisteredComponentError
+    UnregisteredComponentError,
+    #[error("Index out of bounds when accessing entity id. (Expected range from 0..{expected}, got {found}).")]
+    IndexOutOfBoundsError { expected: usize, found: usize },
+    #[error("Attempted to get component data that does not exist. Error in bitmask probably?")]
+    NonexistentComponentDataError,
 }
 
 #[cfg(test)]
 mod tests {
-    use std::any::TypeId;
+    use std::{any::TypeId};
 
     use super::*;
+
+    #[test]
+    fn new_entities_fill_deleted_spots() -> eyre::Result<()> {
+        let mut ents = Entities::default();
+
+        ents.create_entity()
+            .insert_checked(Health(100))?
+            .insert_checked(Id(String::from("hi")))?;
+
+        ents.create_entity()
+            .insert_checked(Health(50))?
+            .insert_checked(Id(String::from("hey")))?;
+
+        ents.delete_entity_by_id(0)?;
+
+        ents.create_entity()
+            .insert_checked(Health(20))?;
+
+        assert_eq!(ents.map[0], 1);
+
+        let hp = ents.components.get(&TypeId::of::<Health>()).unwrap()[0]
+            .as_ref()
+            .unwrap()
+            .borrow();
+        let hp = hp.downcast_ref::<Health>()
+            .unwrap();
+
+        assert_eq!(hp.0, 20);
+
+        Ok(())
+    }
+
+    #[test]
+    fn delete_entities_by_id() -> eyre::Result<()> {
+        let mut ents = Entities::default();
+
+        ents.create_entity()
+            .insert_checked(Health(100))?
+            .insert_checked(Id(String::from("hi")))?;
+
+        ents.create_entity()
+            .insert_checked(Unique)?
+            .insert_checked(Health(50))?
+            .insert_checked(Id(String::from("hey")))?;
+
+        ents.delete_entity_by_id(0)?;
+
+        assert_eq!(ents.map[0], 0);
+
+        Ok(())
+    }
 
     #[test]
     fn register_entities() {

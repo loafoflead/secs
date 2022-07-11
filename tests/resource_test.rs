@@ -26,12 +26,13 @@ fn get_resources_mutably() {
 }
 
 #[test]
-fn delete_resource() {
+fn delete_resource() -> eyre::Result<()> {
     let mut world = init_world();
 
-    world.delete_resource::<SizeResource>();
+    world.delete_resource::<SizeResource>()?;
 
-    assert_eq!(world.get_resource::<SizeResource>(), None);
+    assert!(world.get_resource::<SizeResource>().is_err());
+    Ok(())
 }
 
 fn init_world() -> World {

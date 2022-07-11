@@ -12,8 +12,33 @@ fn test_debug() -> eyre::Result<()> {
     Ok(())
 }
 
+#[test]
+fn test_queries() -> eyre::Result<()> {
+    let world = init_world()?;
 
+    let mut query = world.query();
+    let query = query.with_component::<Foo>()?.with_component::<Bar>()?.run_entity()?;
 
+    for ent in query {
+        if let Ok(foo) = ent.get_component::<Foo>() { println!("foo {:?}", foo); }
+        if let Ok(bar) = ent.get_component::<Bar>() { println!("bar {:?}", bar); }
+    }
+
+    Ok(())
+}
+
+#[test]
+fn test_resources() -> eyre::Result<()> {
+    let world = init_world()?;
+
+    let cool = world.get_resource::<CoolResource>()?;
+
+    assert_eq!(*cool, CoolResource {
+        eggs: 0, egg_name: String::from("Hello")
+    });
+
+    Ok(())
+}
 
 fn init_world() -> eyre::Result<World> {
     let mut world = World::new();
@@ -36,11 +61,15 @@ fn init_world() -> eyre::Result<World> {
     Ok(world)
 }
 
+#[derive(Debug)]
 struct Foo(u8);
+#[derive(Debug)]
 struct Bar(u32);
 
+#[derive(Debug)]
 struct Egg(char);
 
+#[derive(Debug, PartialEq)]
 struct CoolResource {
     eggs: i32,
     egg_name: String,

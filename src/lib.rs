@@ -25,6 +25,9 @@ pub mod prelude {
     pub use super::resources::*;
     pub use super::world::*;
     pub use super::entities::*;
+
+    pub use std::cell::{Ref, RefMut};
+
 }
 
 #[cfg(test)]

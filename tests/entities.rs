@@ -1,6 +1,51 @@
 use secs::prelude::*;
 
 #[test]
+fn delete_entity() -> eyre::Result<()> {
+    let mut world = World::new();
+
+    world.spawn()
+        .insert_checked(Location(12, 12))?
+        .insert_checked(Size(-2))?;
+
+    world.spawn()
+        .insert_checked(Location(1049, 20))?
+        .insert_checked(Size(19))?;
+
+    world.delete_entity(0)?; // delete 1st entity
+
+    let query = world.query().with_component::<Location>()?.run();
+
+    // assert that the query is only one component
+    assert_eq!(query.len(), 1);
+    // assert that there is only 1 'Location' components in the system
+    assert_eq!(query[0].len(), 1);
+
+    let borrowed_locations = query[0][0].borrow();
+    let loc = borrowed_locations.downcast_ref::<Location>().unwrap();
+
+    // assert that now the first location is 1049 (the second component)
+    assert_eq!(loc.0, 1049);
+
+    world.spawn().insert_checked(Location(0, 0))?;
+
+    let query = world.query().with_component::<Location>()?.run();
+
+    // assert that there are two location components in the system
+    assert_eq!(query[0].len(), 2);
+
+    let borrowed_locations = query[0][0].borrow();
+    let loc = borrowed_locations.downcast_ref::<Location>().unwrap();
+
+    // assert that the second location is now the new one
+    assert_eq!(loc.0, 0);
+
+    Ok(())
+}
+
+
+
+#[test]
 fn create_entity() -> eyre::Result<()> {
     let pos = Location(2, 12);
 
