@@ -70,7 +70,7 @@ fn delete_component_from_ent() -> eyre::Result<()> {
         .insert_checked(Location(9, 2))?
         .insert_checked(Size(2))?;
 
-    world.delete_component_by_id::<Location>(0)?;
+    world.delete_component_from_ent_checked::<Location>(0)?;
 
     let mut indexes = Vec::new();
     let query = world.query().with_component::<Location>()?.with_component::<Size>()?.read_indexes_to_buf(&mut indexes).run();

@@ -9,46 +9,46 @@ pub struct Query<'a> {
 
 impl<'a> Query<'a> {
     /**
-     * Creates and returns a new Query struct.
-     * 
-     * Takes an immutable reference to an entites struct.
+    Creates and returns a new Query struct.
+    
+    Takes an immutable reference to an entites struct.
      */
     pub fn new(entities: &'a Entities) -> Self {
         Self { map: 0, entities, type_ids: Vec::new() }
     }
 
     /**
-     * Function that combines the bitmask of the component type given
-     * with the query's current bitmap.
-     * 
-     * Essentially adding the type to the query.
-     * 
-     * Returns an error if the component queried doesn't exist in the entites struct passed in.
-     * 
-     * ```
-     * use secs::prelude::*;
-     * 
-     * struct Component1(pub i8);
-     * struct Component2(pub char);
-     * 
-     * let mut entities = Entities::default();
-     * // add in a dummy entity
-     * entities.create_entity()
-     *     .insert_checked(Component1(-5)).unwrap()
-     *     .insert_checked(Component2('r')).unwrap();
-     * 
-     * let query_res = Query::new(&entities)
-     *      .with_component::<Component1>().unwrap()
-     *      .with_component::<Component2>().unwrap()
-     *      .run();
-     * 
-     * let n1s = &query_res[0];
-     * let n2s = &query_res[1];
-     * 
-     * assert_eq!(n1s.len(), n2s.len());
-     * assert_eq!(n1s.len(), 1);
-     * 
-     * ```
+    Function that combines the bitmask of the component type given
+    with the query's current bitmap.
+    
+    Essentially adding the type to the query.
+    
+    Returns an error if the component queried doesn't exist in the entites struct passed in.
+    
+    ```
+    use secs::prelude::*;
+    
+    struct Component1(pub i8);
+    struct Component2(pub char);
+    
+    let mut entities = Entities::default();
+    // add in a dummy entity
+    entities.create_entity()
+        .insert_checked(Component1(-5)).unwrap()
+        .insert_checked(Component2('r')).unwrap();
+    
+    let query_res = Query::new(&entities)
+         .with_component::<Component1>().unwrap()
+         .with_component::<Component2>().unwrap()
+         .run();
+    
+    let n1s = &query_res[0];
+    let n2s = &query_res[1];
+    
+    assert_eq!(n1s.len(), n2s.len());
+    assert_eq!(n1s.len(), 1);
+    
+    ```
      */
     pub fn with_component<T: Any>(&mut self) -> eyre::Result<&mut Self> {
         let typeid = TypeId::of::<T>();
@@ -63,51 +63,56 @@ impl<'a> Query<'a> {
     }
 
     /**
-     * Executes and returns the result of a query in the form of a vector of vectors 
-     * of [ComponentType](types.ComponentType.html).
-     * 
-     * ```
-     * use secs::prelude::*;
-     * 
-     * struct Component1(pub i8);
-     * struct Component2(pub char);
-     * 
-     * let mut entities = Entities::default();
-     * // add in a dummy entity
-     * entities.create_entity()
-     *     .insert_checked(Component1(-5)).unwrap()
-     *     .insert_checked(Component2('r')).unwrap();
-     * 
-     * entities.create_entity()
-     *     .insert_checked(Component1(120)).unwrap()
-     *     .insert_checked(Component2('b')).unwrap();
-     * 
-     * let query_res = Query::new(&entities)
-     *      .with_component::<Component1>().unwrap()
-     *      .with_component::<Component2>().unwrap()
-     *      .run();
-     * 
-     * let n1s = &query_res[0];
-     * let n2s = &query_res[1];
-     * 
-     * let first1 = n1s[0].borrow();
-     * let first1 = first1.downcast_ref::<Component1>().unwrap();
-     * assert_eq!(first1.0, -5);
-     * 
-     * let first2 = n2s[0].borrow();
-     * let first2 = first2.downcast_ref::<Component2>().unwrap();
-     * assert_eq!(first2.0, 'r');
-     * 
-     * let second1 = n1s[1].borrow();
-     * let second1 = second1.downcast_ref::<Component1>().unwrap();
-     * assert_eq!(second1.0, 120);
-     * 
-     * let second2 = n2s[1].borrow();
-     * let second2 = second2.downcast_ref::<Component2>().unwrap();
-     * assert_eq!(second2.0, 'b');
-     * ```
+    Executes and returns the result of a query in the form of a vector of vectors 
+    of [ComponentType](types.ComponentType.html).
+
+    ```
+    use secs::prelude::*;
+
+    struct Component1(pub i8);
+    struct Component2(pub char);
+
+    let mut entities = Entities::default();
+    // add in a dummy entity
+    entities.create_entity()
+        .insert_checked(Component1(-5)).unwrap()
+        .insert_checked(Component2('r')).unwrap();
+
+    entities.create_entity()
+        .insert_checked(Component1(120)).unwrap()
+        .insert_checked(Component2('b')).unwrap();
+
+    let query_res = Query::new(&entities)
+         .with_component::<Component1>().unwrap()
+         .with_component::<Component2>().unwrap()
+         .run();
+
+    let n1s = &query_res[0];
+    let n2s = &query_res[1];
+
+    let first1 = n1s[0].borrow();
+    let first1 = first1.downcast_ref::<Component1>().unwrap();
+    assert_eq!(first1.0, -5);
+
+    let first2 = n2s[0].borrow();
+    let first2 = first2.downcast_ref::<Component2>().unwrap();
+    assert_eq!(first2.0, 'r');
+
+    let second1 = n1s[1].borrow();
+    let second1 = second1.downcast_ref::<Component1>().unwrap();
+    assert_eq!(second1.0, 120);
+
+    let second2 = n2s[1].borrow();
+    let second2 = second2.downcast_ref::<Component2>().unwrap();
+    assert_eq!(second2.0, 'b');
+    ```
      */
     pub fn run(&mut self) -> Vec<Vec<ComponentType>> {
+        // signifies that we have no valid components to query
+        if self.map == 0 {
+            return vec![]
+        }
+
         let indexes = self.entities.map.iter().enumerate().filter_map(|(index, map)| {
             if map & self.map == self.map {
                 Some(index)
@@ -128,6 +133,37 @@ impl<'a> Query<'a> {
         .collect::<Vec<Vec<ComponentType>>>()
     }
 
+    /**
+    Gets the indexes of all the components in this query and fills them into a passed buffer.
+    
+    ```
+    use secs::prelude::*;
+    
+    struct Hi(u8);
+    struct Hello(usize);
+    
+    let mut ents = Entities::default();
+    
+    ents.create_entity()
+        .insert_checked(Hi(9)).unwrap()
+        .insert_checked(Hello(1242359)).unwrap();
+    ents.create_entity()
+        .insert_checked(Hi(1)).unwrap()
+        .insert_checked(Hello(1259)).unwrap();
+    
+    let mut indexes = Vec::new();
+    
+    let query1 = Query::new(&ents).with_component::<Hi>().unwrap().read_indexes_to_buf(&mut indexes).run();
+    
+    // asserts that the number of 'Hi' components is equal to the number of entities. In occurence, this is correct.
+    assert_eq!(indexes.len(), *&query1[0].len());
+    ```
+    
+    All this function does in essence is loop over the inner 'map' of the entities, which 
+    stores their respective bitmasks, and do the & product of it and the Query object's bitmask map.
+    
+    It pushes these indexes into a vector and then places this into 'buf'.
+     */
     pub fn read_indexes_to_buf(&mut self, buf: &mut Vec<usize>) -> &mut Self {
         *buf = self.entities.map.iter().enumerate().filter_map(|(index, map)| {
             if map & self.map == self.map {
@@ -141,9 +177,16 @@ impl<'a> Query<'a> {
     }
 }
 
+// Trait implementations
+impl<'a> std::fmt::Display for Query<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{self:#?}")
+    }
+}
+
 #[derive(thiserror::Error, Debug)]
 enum QueryError {
-    #[error("Attempted to query an unregistered component")]
+    #[error("Attempted to query an unregistered component, maybe you forgot to register it?")]
     UnregisteredComponentError,
 }
 

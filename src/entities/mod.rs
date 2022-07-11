@@ -10,26 +10,26 @@ type ComponentType = Rc<RefCell<dyn Any>>;
 
 #[derive(Debug, Default)]
 /**
- * Struct to store Entites and Components in an Entity component System.
- * 
- * Uses bitmaps to execute queries, and as such has a hard limit on the number of individual components that
- * are able to be registered at a time. This particular instance uses a u128, allowing for 128 unique components.
- * 
- * The struct also contains an entity counter to help with automatic registering of components, as well as
- * a hashmap of the different bit masks of each component as well as a vector containing the entity id's 
- * in the form of their bit masks.
- * 
- * The struct stores a 'map' which is a vector of bitmasks that function essentially as entity id's.
- * When an entity is created, a bitmask is appended to this vector with the components the new entity has.
- * So the vector will look something like this (assuming arbitrary entites and components exist in the system):
- * 
- *  map [...0010_1101, ...0111_1111, ...0101_000, ...] where each 1 corresponds to a component the entity has.
- * 
- * In contrast, the 'bit_masks' hashmap will ressemble this:
- * 
- *  bit_masks { Component1: ...0000_0001, Component2: ...0000_0010, Component3: ...0000_0100, ... } where a 1 corresponds to the component's 'id.
- * 
- * Note: in the place of 'Component1' the code actually uses TypeIds, so it would be TypeId::of::<Component1>().
+  Struct to store Entites and Components in an Entity component System.
+  
+  Uses bitmaps to execute queries, and as such has a hard limit on the number of individual components that
+  are able to be registered at a time. This particular instance uses a u128, allowing for 128 unique components.
+  
+  The struct also contains an entity counter to help with automatic registering of components, as well as
+  a hashmap of the different bit masks of each component as well as a vector containing the entity id's 
+  in the form of their bit masks.
+  
+  The struct stores a 'map' which is a vector of bitmasks that function essentially as entity id's.
+  When an entity is created, a bitmask is appended to this vector with the components the new entity has.
+  So the vector will look something like this (assuming arbitrary entites and components exist in the system):
+  
+   map [...0010_1101, ...0111_1111, ...0101_000, ...] where each 1 corresponds to a component the entity has.
+  
+  In contrast, the 'bit_masks' hashmap will ressemble this:
+  
+   bit_masks { Component1: ...0000_0001, Component2: ...0000_0010, Component3: ...0000_0100, ... } where a 1 corresponds to the component's 'id.
+  
+  Note: in the place of 'Component1' the code actually uses TypeIds, so it would be TypeId::of::<Component1>().
  */
 pub struct Entities {
     components: HashMap<TypeId, Vec<Option<ComponentType>>>,
@@ -41,7 +41,7 @@ pub struct Entities {
 
 impl Entities {
     /**
-     * Adds new index into the hashmap of components and adds the bitmask of the new type into bitmask vec.
+      Adds new index into the hashmap of components and adds the bitmask of the new type into bitmask vec.
      */
     pub fn register_component<T: Any + 'static>(&mut self) {
         let typeid = TypeId::of::<T>();
@@ -51,26 +51,26 @@ impl Entities {
     }
 
     /**
-     * Convenience function used when auto registering new components.
-     * 
-     * Basically it makes sure to fill the blank spots in the hashmap with 'None' values
-     * to make sure the indexing doesn't get messes up doing queries.
-     * 
-     * |-----------------------------------------------|
-     * |           | ent1 | ent2 | ent3 | newent | ... |
-     * |-----------------------------------------------|
-     * |Component1 |  56  | 45   |  56  |  None  | ... |
-     * |Component2 | None | None |  12  |  None  | ... |
-     * |NewComp    |      |      |      |        | ... | <- New component added 
-     * |-----------------------------------------------|    automatically with [insert()](struct.Entities.html#method.insert) method.
-     * 
-     * |-----------------------------------------------|
-     * |           | ent1 | ent2 | ent3 | newent | ... |
-     * |-----------------------------------------------|
-     * |Component1 |  56  | 45   |  56  |  None  | ... |
-     * |Component2 | None | None |  12  |  None  | ... |
-     * |NewComp    | None | None | None |  None  | ... | <- The new vec is filled with None values by this function. 
-     * |-----------------------------------------------|
+      Convenience function used when auto registering new components.
+      
+      Basically it makes sure to fill the blank spots in the hashmap with 'None' values
+      to make sure the indexing doesn't get messes up doing queries.
+      
+      |-----------------------------------------------|
+      |           | ent1 | ent2 | ent3 | newent | ... |
+      |-----------------------------------------------|
+      |Component1 |  56  | 45   |  56  |  None  | ... |
+      |Component2 | None | None |  12  |  None  | ... |
+      |NewComp    |      |      |      |        | ... | <- New component added 
+      |-----------------------------------------------|    automatically with [insert()](struct.Entities.html#method.insert) method.
+      
+      |-----------------------------------------------|
+      |           | ent1 | ent2 | ent3 | newent | ... |
+      |-----------------------------------------------|
+      |Component1 |  56  | 45   |  56  |  None  | ... |
+      |Component2 | None | None |  12  |  None  | ... |
+      |NewComp    | None | None | None |  None  | ... | <- The new vec is filled with None values by this function. 
+      |-----------------------------------------------|
      */
     fn fill_new_component<T: Any>(&mut self) {
         let comps = self.components.get_mut(&TypeId::of::<T>()).unwrap();
@@ -79,26 +79,26 @@ impl Entities {
 
     #[allow(dead_code)]
     /**
-     * Convenience function used when auto registering new components but returns an optional value if it fails.
-     * 
-     * Basically it makes sure to fill the blank spots in the hashmap with 'None' values
-     * to make sure the indexing doesn't get messes up doing queries.
-     * 
-     * |-----------------------------------------------|
-     * |           | ent1 | ent2 | ent3 | newent | ... |
-     * |-----------------------------------------------|
-     * |Component1 |  56  | 45   |  56  |  None  | ... |
-     * |Component2 | None | None |  12  |  None  | ... |
-     * |NewComp    |      |      |      |        | ... | <- New component added 
-     * |-----------------------------------------------|    automatically with [insert()](struct.Entities.html#method.insert) method.
-     * 
-     * |-----------------------------------------------|
-     * |           | ent1 | ent2 | ent3 | newent | ... |
-     * |-----------------------------------------------|
-     * |Component1 |  56  | 45   |  56  |  None  | ... |
-     * |Component2 | None | None |  12  |  None  | ... |
-     * |NewComp    | None | None | None |  None  | ... | <- The new vec is filled with None values by this function. 
-     * |-----------------------------------------------|
+      Convenience function used when auto registering new components but returns an optional value if it fails.
+      
+      Basically it makes sure to fill the blank spots in the hashmap with 'None' values
+      to make sure the indexing doesn't get messes up doing queries.
+      
+      |-----------------------------------------------|
+      |           | ent1 | ent2 | ent3 | newent | ... |
+      |-----------------------------------------------|
+      |Component1 |  56  | 45   |  56  |  None  | ... |
+      |Component2 | None | None |  12  |  None  | ... |
+      |NewComp    |      |      |      |        | ... | <- New component added 
+      |-----------------------------------------------|    automatically with [insert()](struct.Entities.html#method.insert) method.
+      
+      |-----------------------------------------------|
+      |           | ent1 | ent2 | ent3 | newent | ... |
+      |-----------------------------------------------|
+      |Component1 |  56  | 45   |  56  |  None  | ... |
+      |Component2 | None | None |  12  |  None  | ... |
+      |NewComp    | None | None | None |  None  | ... | <- The new vec is filled with None values by this function. 
+      |-----------------------------------------------|
      */
     fn fill_new_component_checked<T: Any>(&mut self) -> Result<()> {
         let comps = self.components.get_mut(&TypeId::of::<T>()).ok_or(ComponentError::AutomaticRegistrationError)?;
@@ -107,24 +107,24 @@ impl Entities {
     }
 
     /**
-     * Adds a new entry in each component vector and fills it with a 'None' option value.
-     * In effect, adds a new entity into the struct. The entity will be pushed to the end
-     * and as such any subsequent calls to [insert()](struct.Entities.html#method.insert) will
-     * effect the latest entity added with this function.
-     * 
-     * ```
-     * use secs::prelude::*;
-     * use std::any::TypeId;
-     * 
-     * struct Health(u8);
-     * struct Speed(i8);
-     * 
-     * let mut ents = Entities::default();
-     * 
-     * ents.create_entity()
-     *     .insert_checked(Health(10_u8)).unwrap()
-     *     .insert_checked(Speed(-16)).unwrap();
-     * ```
+      Adds a new entry in each component vector and fills it with a 'None' option value.
+      In effect, adds a new entity into the struct. The entity will be pushed to the end
+      and as such any subsequent calls to [insert()](struct.Entities.html#method.insert) will
+      effect the latest entity added with this function.
+      
+      ```
+      use secs::prelude::*;
+      use std::any::TypeId;
+      
+      struct Health(u8);
+      struct Speed(i8);
+      
+      let mut ents = Entities::default();
+      
+      ents.create_entity()
+          .insert_checked(Health(10_u8)).unwrap()
+          .insert_checked(Speed(-16)).unwrap();
+      ```
      */
     pub fn create_entity(&mut self) -> &mut Self {
         self.components.iter_mut().for_each(|(_key, value)| {
@@ -138,25 +138,25 @@ impl Entities {
     }
 
     /**
-     * Inserts a component into whatever is the newest newly created entity. Returns Err if the component 
-     * 
-     * Note: automatically calls [register_component()](struct.Entities.html#method.register_component) and 
-     * [fill_new_component()](struct.Entities.html#method.fill_new_component) to streamline the creation of new
-     * entities.
-     * 
-     * ```
-     * use secs::prelude::*;
-     * use std::any::TypeId;
-     * 
-     * struct Health(u8);
-     * struct Speed(i8);
-     * 
-     * let mut ents = Entities::default();
-     * 
-     * ents.create_entity()
-     *     .insert_checked(Health(10_u8)).unwrap()
-     *     .insert_checked(Speed(-16)).unwrap();
-     * ```
+      Inserts a component into whatever is the newest newly created entity. Returns Err if the component 
+      
+      Note: automatically calls [register_component()](struct.Entities.html#method.register_component) and 
+      [fill_new_component()](struct.Entities.html#method.fill_new_component) to streamline the creation of new
+      entities.
+      
+      ```
+      use secs::prelude::*;
+      use std::any::TypeId;
+      
+      struct Health(u8);
+      struct Speed(i8);
+      
+      let mut ents = Entities::default();
+      
+      ents.create_entity()
+          .insert_checked(Health(10_u8)).unwrap()
+          .insert_checked(Speed(-16)).unwrap();
+      ```
      */
     pub fn insert<T: Any>(&mut self, data: T) -> &mut Self {
         // auto register new component types
@@ -182,25 +182,25 @@ impl Entities {
     }
 
     /**
-     * Inserts a component into whatever is the newest newly created entity. Returns Err if the component isn't registered.
-     * 
-     * Note: automatically calls [register_component()](struct.Entities.html#method.register_component) and 
-     * [fill_new_component()](struct.Entities.html#method.fill_new_component) to streamline the creation of new
-     * entities.
-     * 
-     * ```
-     * use secs::prelude::*;
-     * use std::any::TypeId;
-     * 
-     * struct Health(u8);
-     * struct Speed(i8);
-     * 
-     * let mut ents = Entities::default();
-     * 
-     * ents.create_entity()
-     *     .insert_checked(Health(10_u8)).unwrap()
-     *     .insert_checked(Speed(-16)).unwrap();
-     * ```
+      Inserts a component into whatever is the newest newly created entity. Returns Err if the component isn't registered.
+      
+      Note: automatically calls [register_component()](struct.Entities.html#method.register_component) and 
+      [fill_new_component()](struct.Entities.html#method.fill_new_component) to streamline the creation of new
+      entities.
+      
+      ```
+      use secs::prelude::*;
+      use std::any::TypeId;
+      
+      struct Health(u8);
+      struct Speed(i8);
+      
+      let mut ents = Entities::default();
+      
+      ents.create_entity()
+          .insert_checked(Health(10_u8)).unwrap()
+          .insert_checked(Speed(-16)).unwrap();
+      ```
      */
     pub fn insert_checked<T: Any>(&mut self, data: T) -> eyre::Result<&mut Self> {
         // auto register new component types
@@ -225,8 +225,36 @@ impl Entities {
         Ok(self)
     }
 
+    /**
+      Deletes a component from an entity using the entity's index in the ECS. 
+      
+      ```
+      use secs::prelude::*;
+      use std::any::TypeId;
+      
+      struct Health(u8);
+      struct Speed(i8);
+      
+      let mut ents = Entities::default();
+      
+      ents.create_entity()
+          .insert_checked(Health(10_u8)).unwrap()
+          .insert_checked(Speed(-16)).unwrap();
+      
+      ents.delete_component_by_entity_id::<Health>(0);
+      
+      let query = Query::new(&ents)
+          .with_component::<Health>().unwrap().run();
+      
+      assert_eq!(query[0].len(), 0);
+      ```
+      
+      Returns an error if the component that is trying to be deleted isn't registered.
 
-    pub fn delete_component_by_entity_id<T: Any>(&mut self, index: usize) -> Result<()> {
+      This operation is fast, because there are no big read or writes to memory. All this function does 
+      is do an xOr operation on the bitmask of the entity's index given, making this a cheap operation. 
+     */
+    pub fn delete_component_by_entity_id_checked<T: Any>(&mut self, index: usize) -> Result<()> {
         let typeid = TypeId::of::<T>();
         let mask = self.bit_masks.get(&typeid).ok_or(ComponentError::UnregisteredComponentError)?;
 
@@ -235,6 +263,73 @@ impl Entities {
         Ok(())
     }
 
+    /**
+      Deletes a component from an entity using the entity's index in the ECS. 
+      
+      ```
+      use secs::prelude::*;
+      use std::any::TypeId;
+      
+      struct Health(u8);
+      struct Speed(i8);
+      
+      let mut ents = Entities::default();
+      
+      ents.create_entity()
+          .insert_checked(Health(10_u8)).unwrap()
+          .insert_checked(Speed(-16)).unwrap();
+      
+      ents.delete_component_by_entity_id::<Health>(0);
+      
+      let query = Query::new(&ents)
+          .with_component::<Health>().unwrap().run();
+      
+      assert_eq!(query[0].len(), 0);
+      ```
+      
+      Panics if the component that is trying to be deleted isn't registered.
+
+      This operation is fast, because there are no big read or writes to memory. All this function does 
+      is do an xOr operation on the bitmask of the entity's index given, making this a cheap operation. 
+     */
+    pub fn delete_component_by_entity_id<T: Any>(&mut self, index: usize) {
+        let typeid = TypeId::of::<T>();
+        let mask = self.bit_masks.get(&typeid).unwrap();
+
+        self.map[index] ^= *mask;
+    }
+
+    /**
+      Inserts a new instance of a component into an entity using it's id. (index)
+      
+      ```
+      use secs::prelude::*;
+      
+      struct Foo(f32);
+      struct Bar(u16);
+      
+      let mut ents = Entities::default();
+      
+      ents.register_component::<Bar>(); // this step is neccessary so that the first Query doesn't fail.
+      
+      ents.create_entity()
+          .insert_checked(Foo(9.0_f32)).unwrap();
+      
+      let query1 = Query::new(&ents).with_component::<Bar>().unwrap().run();
+      
+      // There are none of the component 'Bar' in the query, so none in the system
+      assert_eq!(query1[0].len(), 0);
+      
+      ents.insert_component_into_entity_by_id(Bar(29), 0); // insert 'Bar' into entity at position 0
+      
+      let query1 = Query::new(&ents).with_component::<Bar>().unwrap().run();
+      
+      // There is 1 Bar component in the system, we have successfully added a component.
+      assert_eq!(query1[0].len(), 1);
+      ```
+
+      Panics when applying this function without first creating a new entity with [creat_entity()](struct.Entities.html#method.create_entity).
+     */
     pub fn insert_component_into_entity_by_id<T: Any>(&mut self, data: T, map_index: usize) {
         // auto register new component types
         if !self.bit_masks.contains_key(&TypeId::of::<T>()) {
@@ -255,6 +350,38 @@ impl Entities {
         }
     }
 
+    /**
+      Inserts a new instance of a component into an entity using it's id. (index)
+      
+      ```
+      use secs::prelude::*;
+      
+      struct Foo(f32);
+      struct Bar(u16);
+      
+      let mut ents = Entities::default();
+      
+      ents.register_component::<Bar>(); // this step is neccessary so that the first Query doesn't fail.
+      
+      ents.create_entity()
+          .insert_checked(Foo(9.0_f32)).unwrap();
+      
+      let query1 = Query::new(&ents).with_component::<Bar>().unwrap().run();
+      
+      // There are none of the component 'Bar' in the query, so none in the system
+      assert_eq!(query1[0].len(), 0);
+      
+      ents.insert_component_into_entity_by_id(Bar(29), 0); // insert 'Bar' into entity at position 0
+      
+      let query1 = Query::new(&ents).with_component::<Bar>().unwrap().run();
+      
+      // There is 1 Bar component in the system, we have successfully added a component.
+      assert_eq!(query1[0].len(), 1);
+      ```
+
+      Returns an error if the component inserted is unregistered (which should never happen, as this function auto-registers components like [insert()](struct.Entities.html#method.insert))
+      or if the user tries to insert a component without creating a new entity.
+     */
     pub fn insert_component_into_entity_by_id_checked<T: Any>(&mut self, data: T, map_index: usize) -> eyre::Result<()> {
         // auto register new component types
         if !self.bit_masks.contains_key(&TypeId::of::<T>()) {
@@ -276,6 +403,40 @@ impl Entities {
         Ok(())
     }
 
+    /**
+    Deletes all occurences of a component from the Entity Component System and unregisters it.
+
+    ```
+    use secs::prelude::*;
+
+    struct Foo(char); struct Bar(u16);
+
+    let mut ents = Entities::default();
+
+    // create two dummy entities
+    ents.create_entity().insert_checked(Foo('b')).unwrap().insert_checked(Bar(6)).unwrap();
+    ents.create_entity().insert_checked(Foo('h')).unwrap().insert_checked(Bar(101)).unwrap();
+
+    let query1 = Query::new(&ents).with_component::<Bar>().unwrap().run();
+
+    // The system contains two instances of the struct 'Bar', and is able to recognize them.
+    assert_eq!(query1[0].len(), 2);
+
+    ents.delete_component::<Bar>(); // unregister the 'Bar' component from the system.
+
+    let mut query2 = Query::new(&ents);
+    let result = query2.with_component::<Bar>();
+
+    // the 'Bar' component no longer exists, and as such will throw an error
+    // if we try and Query for it.
+    assert!(result.is_err()); 
+    ```
+
+    This function will panic if the component entered doesn't exist.
+
+    This operation is fast, because there are no heavy read/writes to memory. This function
+    simply xOrs the bitmask of every entity to remove this component from it.
+     */
     pub fn delete_component<T: Any>(&mut self) {
         let (_, bitmask) = self.bit_masks.remove_entry(&TypeId::of::<T>()).unwrap();
         for component_bitmask in &mut self.map {
@@ -283,6 +444,40 @@ impl Entities {
         }
     }
 
+    /**
+    Deletes all occurences of a component from the Entity Component System and unregisters it.
+
+    ```
+    use secs::prelude::*;
+
+    struct Foo(char); struct Bar(u16);
+
+    let mut ents = Entities::default();
+
+    // create two dummy entities
+    ents.create_entity().insert_checked(Foo('b')).unwrap().insert_checked(Bar(6)).unwrap();
+    ents.create_entity().insert_checked(Foo('h')).unwrap().insert_checked(Bar(101)).unwrap();
+
+    let query1 = Query::new(&ents).with_component::<Bar>().unwrap().run();
+
+    // The system contains two instances of the struct 'Bar', and is able to recognize them.
+    assert_eq!(query1[0].len(), 2);
+
+    ents.delete_component::<Bar>(); // unregister the 'Bar' component from the system.
+
+    let mut query2 = Query::new(&ents);
+    let result = query2.with_component::<Bar>();
+
+    // the 'Bar' component no longer exists, and as such will throw an error
+    // if we try and Query for it.
+    assert!(result.is_err()); 
+    ```
+
+    This function will return an error if the component entered doesn't exist.
+
+    This operation is fast, because there are no heavy read/writes to memory. This function
+    simply xOrs the bitmask of every entity to remove this component from it.
+     */
     pub fn delete_component_checked<T: Any>(&mut self) -> eyre::Result<()> {
         let (_, bitmask) = self.bit_masks.remove_entry(&TypeId::of::<T>()).ok_or(ComponentError::UnregisteredComponentError)?;
         for component_bitmask in &mut self.map {
@@ -292,12 +487,19 @@ impl Entities {
     }
 
     /**
-     * Convenience function to get the bitmask of a given TypeId. 
-     * 
-     * Returns None if the component requested isn't registered.
+    Convenience function to get the bitmask of a given TypeId. 
+    
+    Returns None if the component requested isn't registered.
      */
     pub fn get_bitmask(&self, typeid: &TypeId) -> Option<u128> {
         self.bit_masks.get(typeid).copied()
+    }
+}
+
+// Trait implementations
+impl std::fmt::Display for Entities {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{self:#?}")
     }
 }
 
@@ -425,7 +627,7 @@ mod tests {
             .insert(Health(50))
             .insert(Id(String::from("hey")));
 
-        ents.delete_component_by_entity_id::<Health>(0)?;
+        ents.delete_component_by_entity_id_checked::<Health>(0)?;
 
         assert_eq!(ents.map[0], 2);
 
