@@ -168,9 +168,10 @@ fn delete_component() -> eyre::Result<()> {
 
     world.unregister_component_checked::<Location>()?;
 
-    let query = world.query().with_component_checked::<Location>()?.run();
+    let mut query = world.query();
+    let query = query.with_component_checked::<Location>();
 
-    assert_eq!(query[0].len(), 0);
+    assert!(query.is_err());
 
     Ok(())
 }

@@ -18,8 +18,3 @@ keywords = ["ecs", "dod"]
 [dependencies]
 eyre = "0.6.8"
 thiserror = "*"
-[dependencies.uuid]
-version = "1.1.2"
-features = [
-    "v4"
-]

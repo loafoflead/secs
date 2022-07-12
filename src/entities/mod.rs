@@ -214,7 +214,7 @@ impl Entities {
       ents.delete_component_by_entity_id::<Health>(0);
       
       let query = Query::new(&ents)
-          .with_component::<Health>().unwrap().run();
+          .with_component_checked::<Health>().unwrap().run();
       
       assert_eq!(query[0].len(), 0);
       ```
@@ -271,7 +271,7 @@ impl Entities {
       ents.delete_component_by_entity_id::<Health>(0);
       
       let query = Query::new(&ents)
-          .with_component::<Health>().unwrap().run();
+          .with_component_checked::<Health>().unwrap().run();
       
       assert_eq!(query[0].len(), 0);
       ```
@@ -301,14 +301,14 @@ impl Entities {
       ents.create_entity()
           .insert_checked(Foo(9.0_f32)).unwrap();
       
-      let query1 = Query::new(&ents).with_component::<Bar>().unwrap().run();
+      let query1 = Query::new(&ents).with_component_checked::<Bar>().unwrap().run();
       
       // There are none of the component 'Bar' in the query, so none in the system
       assert_eq!(query1[0].len(), 0);
       
       ents.insert_component_into_entity_by_id(Bar(29), 0); // insert 'Bar' into entity at position 0
       
-      let query1 = Query::new(&ents).with_component::<Bar>().unwrap().run();
+      let query1 = Query::new(&ents).with_component_checked::<Bar>().unwrap().run();
       
       // There is 1 Bar component in the system, we have successfully added a component.
       assert_eq!(query1[0].len(), 1);
@@ -336,14 +336,14 @@ impl Entities {
       ents.create_entity()
           .insert_checked(Foo(9.0_f32)).unwrap();
       
-      let query1 = Query::new(&ents).with_component::<Bar>().unwrap().run();
+      let query1 = Query::new(&ents).with_component_checked::<Bar>().unwrap().run();
       
       // There are none of the component 'Bar' in the query, so none in the system
       assert_eq!(query1[0].len(), 0);
       
       ents.insert_component_into_entity_by_id(Bar(29), 0); // insert 'Bar' into entity at position 0
       
-      let query1 = Query::new(&ents).with_component::<Bar>().unwrap().run();
+      let query1 = Query::new(&ents).with_component_checked::<Bar>().unwrap().run();
       
       // There is 1 Bar component in the system, we have successfully added a component.
       assert_eq!(query1[0].len(), 1);
@@ -387,7 +387,7 @@ impl Entities {
     ents.create_entity().insert_checked(Foo('b')).unwrap().insert_checked(Bar(6)).unwrap();
     ents.create_entity().insert_checked(Foo('h')).unwrap().insert_checked(Bar(101)).unwrap();
 
-    let query1 = Query::new(&ents).with_component::<Bar>().unwrap().run();
+    let query1 = Query::new(&ents).with_component_checked::<Bar>().unwrap().run();
 
     // The system contains two instances of the struct 'Bar', and is able to recognize them.
     assert_eq!(query1[0].len(), 2);
@@ -395,7 +395,7 @@ impl Entities {
     ents.delete_component::<Bar>(); // unregister the 'Bar' component from the system.
 
     let mut query2 = Query::new(&ents);
-    let result = query2.with_component::<Bar>();
+    let result = query2.with_component_checked::<Bar>();
 
     // the 'Bar' component no longer exists, and as such will throw an error
     // if we try and Query for it.
@@ -425,7 +425,7 @@ impl Entities {
     ents.create_entity().insert_checked(Foo('b')).unwrap().insert_checked(Bar(6)).unwrap();
     ents.create_entity().insert_checked(Foo('h')).unwrap().insert_checked(Bar(101)).unwrap();
 
-    let query1 = Query::new(&ents).with_component::<Bar>().unwrap().run();
+    let query1 = Query::new(&ents).with_component_checked::<Bar>().unwrap().run();
 
     // The system contains two instances of the struct 'Bar', and is able to recognize them.
     assert_eq!(query1[0].len(), 2);
@@ -433,7 +433,7 @@ impl Entities {
     ents.delete_component::<Bar>(); // unregister the 'Bar' component from the system.
 
     let mut query2 = Query::new(&ents);
-    let result = query2.with_component::<Bar>();
+    let result = query2.with_component_checked::<Bar>();
 
     // the 'Bar' component no longer exists, and as such will throw an error
     // if we try and Query for it.
@@ -725,7 +725,7 @@ mod tests {
 
         ents.delete_component_by_entity_id_checked::<Health>(0)?;
 
-        assert_eq!(ents.map[0], 3);
+        assert_eq!(ents.map[0], 2);
 
         Ok(())
     }

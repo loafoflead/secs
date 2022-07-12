@@ -54,7 +54,7 @@ impl<'a> QueryEntity<'a> {
     let mut query = Query::new(&ents);
 
     let entities: Vec<QueryEntity> = query
-        .with_component::<Component1>().unwrap()
+        .with_component_checked::<Component1>().unwrap()
         .run_entity().unwrap();
 
     assert_eq!(entities.len(), 1);
@@ -103,7 +103,7 @@ impl<'a> QueryEntity<'a> {
     let mut query = Query::new(&ents);
 
     let entities: Vec<QueryEntity> = query
-        .with_component::<Component1>().unwrap()
+        .with_component_checked::<Component1>().unwrap()
         .run_entity().unwrap();
 
     assert_eq!(entities.len(), 1);

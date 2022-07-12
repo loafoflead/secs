@@ -127,8 +127,8 @@ impl Resources {
     let hp = resources.get_ref::<Health>().unwrap();
     assert_eq!(hp.0, 123);
     
-    resources.delete::<Health>();
-    assert_eq!(resources.get_ref::<Health>(), None);
+    resources.delete::<Health>().unwrap();
+    assert!(resources.get_ref::<Health>().is_err());
     ```
     
     This function tries to return the value that was stored in the Resources struct, and
@@ -149,10 +149,10 @@ impl Resources {
     assert_eq!(hp.0, 123);
     
     let res = resources.delete::<Health>();
-    assert!(res.is_some());
+    assert!(res.is_ok());
     
     let res = resources.delete::<No>();
-    assert!(!res.is_some());
+    assert!(!res.is_ok());
     ```
      */
     pub fn delete<T: Any>(&mut self) -> eyre::Result<T> {

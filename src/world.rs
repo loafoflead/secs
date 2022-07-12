@@ -217,7 +217,7 @@ impl World {
     world.spawn()
         .insert(Thing(9));
     
-    let query = world.query().with_component::<Thing>().unwrap().run();
+    let query = world.query().with_component_checked::<Thing>().unwrap().run();
     
     let borrow = query[0][0].borrow();
     

@@ -55,8 +55,8 @@ impl<'a> Query<'a> {
         .insert_checked(Component2('r')).unwrap();
     
     let query_res = Query::new(&entities)
-         .with_component::<Component1>().unwrap()
-         .with_component::<Component2>().unwrap()
+         .with_component_checked::<Component1>().unwrap()
+         .with_component_checked::<Component2>().unwrap()
          .run();
     
     let n1s = &query_res[0];
@@ -92,8 +92,8 @@ impl<'a> Query<'a> {
         .insert_checked(Component2('r')).unwrap();
     
     let query_res = Query::new(&entities)
-         .with_component::<Component1>().unwrap()
-         .with_component::<Component2>().unwrap()
+         .with_component_checked::<Component1>().unwrap()
+         .with_component_checked::<Component2>().unwrap()
          .run();
     
     let n1s = &query_res[0];
@@ -137,8 +137,8 @@ impl<'a> Query<'a> {
         .insert_checked(Component2('b')).unwrap();
 
     let query_res = Query::new(&entities)
-         .with_component::<Component1>().unwrap()
-         .with_component::<Component2>().unwrap()
+         .with_component_checked::<Component1>().unwrap()
+         .with_component_checked::<Component2>().unwrap()
          .run();
 
     let n1s = &query_res[0];
@@ -205,7 +205,7 @@ impl<'a> Query<'a> {
 
     let mut query = Query::new(&ents);
 
-    let entities: Vec<QueryEntity> = query.with_component::<Component1>().unwrap().run_entity().unwrap();
+    let entities: Vec<QueryEntity> = query.with_component_checked::<Component1>().unwrap().run_entity().unwrap();
 
     assert_eq!(entities.len(), 1);
 
@@ -256,7 +256,7 @@ impl<'a> Query<'a> {
     
     let mut indexes = Vec::new();
     
-    let query1 = Query::new(&ents).with_component::<Hi>().unwrap().read_indexes_to_buf(&mut indexes).run();
+    let query1 = Query::new(&ents).with_component_checked::<Hi>().unwrap().read_indexes_to_buf(&mut indexes).run();
     
     // asserts that the number of 'Hi' components is equal to the number of entities. In occurence, this is correct.
     assert_eq!(indexes.len(), *&query1[0].len());
