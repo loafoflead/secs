@@ -1,3 +1,8 @@
+//! # Entities
+//! 
+//! The [entities] module serves to declare the Entities struct, which stores entities and components
+//! in the entity component system. 
+
 mod query;
 mod query_entity;
 

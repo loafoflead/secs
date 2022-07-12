@@ -1,3 +1,8 @@
+//! # World
+//! 
+//! The world module contains World, which is a struct that contains Resources and Entities, 
+//! providing functions to interface with them.
+
 use std::{any::Any};
 
 use crate::prelude::*;

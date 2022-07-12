@@ -1,3 +1,9 @@
+//! # Query 
+//! 
+//! The query Module defines the Query struct, which is the primary way of interfacing with 
+//! entities in the ECS. They are intended to be created by the [struct.World.html] and 
+//! then filled out and run.
+
 use super::*;
 use super::query_entity::*;
 

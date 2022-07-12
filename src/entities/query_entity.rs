@@ -1,3 +1,7 @@
+//! # Entity Queries
+//! 
+//! Entity Queries are a more user friendly implementation of the Query.
+
 use std::{any::{Any, TypeId}, cell::{Ref, RefMut}};
 
 use super::{Entities, ComponentError, query::QueryError};

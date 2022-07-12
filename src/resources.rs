@@ -1,3 +1,9 @@
+//! # Resources
+//! 
+//! This module is resource storage for the greater 'World' entity. A Resource is 
+//! any struct or value that is meant to persist globally in the ECS and be accessible
+//! anywhere at any time. Importantly, there can only be ONE of a given resource.
+
 use std::{any::{Any, TypeId}, collections::HashMap};
 
 #[derive(Default, Debug)]
