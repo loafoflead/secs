@@ -6,6 +6,9 @@ description = "An ECS crate written in Rust based on the tutorial series by Broo
 homepage = "https://github.com/loafoflead/secs"
 repository = "https://github.com/loafoflead/secs"
 readme = "README.md"
+exclude = [
+    "tests/*",
+]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
