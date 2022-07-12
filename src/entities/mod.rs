@@ -60,34 +60,7 @@ impl Entities {
         self.bit_masks.insert(typeid, bitmask);
     }
 
-    #[allow(dead_code)]
-    /**
-      Convenience function used when auto registering new components.
-      
-      Basically it makes sure to fill the blank spots in the hashmap with 'None' values
-      to make sure the indexing doesn't get messes up doing queries.
-      
-      |-----------------------------------------------|
-      |           | ent1 | ent2 | ent3 | newent | ... |
-      |-----------------------------------------------|
-      |Component1 |  56  | 45   |  56  |  None  | ... |
-      |Component2 | None | None |  12  |  None  | ... |
-      |NewComp    |      |      |      |        | ... | <- New component added 
-      |-----------------------------------------------|    automatically with [insert()](struct.Entities.html#method.insert) method.
-      
-      |-----------------------------------------------|
-      |           | ent1 | ent2 | ent3 | newent | ... |
-      |-----------------------------------------------|
-      |Component1 |  56  | 45   |  56  |  None  | ... |
-      |Component2 | None | None |  12  |  None  | ... |
-      |NewComp    | None | None | None |  None  | ... | <- The new vec is filled with None values by this function. 
-      |-----------------------------------------------|
-     */
-    fn fill_new_component<T: Any>(&mut self) {
-        self.fill_new_component_checked::<T>().unwrap()
-    }
-
-    #[allow(dead_code)]
+    // #[allow(dead_code)]
     /**
       Convenience function used when auto registering new components but returns an optional value if it fails.
       
