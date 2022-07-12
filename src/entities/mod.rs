@@ -250,7 +250,26 @@ impl Entities {
         let typeid = TypeId::of::<T>();
         let mask = self.bit_masks.get(&typeid).ok_or(ComponentError::UnregisteredComponentError)?;
 
-        self.map[index] ^= *mask;
+        // 3 ^= 1 = 2
+        // 2 ^= 1 = 3
+        //
+        // 0011 ^= 0001 = 0010
+        // 0010 ^= 0001 = 0011 
+
+        // ^ operator is: 1 ^ 0 = 1, 0 ^ 0 = 0 
+        //
+        // desired behaviour:
+        //
+        // 0011 ? 0001 = 0010
+        // 0010 ? 0001 = 0010
+        //
+        // 0011 & 0001 = 0001 / 0011 | 0001 = 0011 
+        // 0010 | 0001 = 0011 / 0010 & 0001 = 0000
+
+        // this executes if the entity does contain this component
+        if self.map[index] & *mask != 0 {
+            self.map[index] ^= *mask;
+        }
 
         Ok(())
     }
@@ -705,6 +724,30 @@ mod tests {
 
         // asserts that when querying we will no longer find this component, effectively removing it.
         assert_eq!(ents.map[0], 2_u128);
+
+        Ok(())
+    }
+
+    #[test] 
+    fn double_delete_fix() -> eyre::Result<()> {
+        let mut ents = Entities::default();
+
+        ents.create_entity()
+            .insert_checked(Health(100))?
+            .insert_checked(Id(String::from("hi")))?;
+
+        // ents.create_entity()
+        //     .insert_checked(Health(50))?
+        //     .insert_checked(Id(String::from("hey")))?;
+
+        ents.delete_component_by_entity_id_checked::<Health>(0)?;
+
+        // assert only 'Id' component is left 
+        assert_eq!(ents.map[0], 2);
+
+        ents.delete_component_by_entity_id_checked::<Health>(0)?;
+
+        assert_eq!(ents.map[0], 3);
 
         Ok(())
     }
