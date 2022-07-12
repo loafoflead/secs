@@ -7,6 +7,12 @@ use std::{any::{Any, TypeId}, cell::{Ref, RefMut}};
 use super::{Entities, ComponentError, query::QueryError};
 
 
+/**
+Struct that provides a more user-friendly way of interfacing with the ECS.
+
+Contains an entity ID and a reference to the Entities struct. This way
+it can iterate over the entities relevent to it's query.
+ */
 pub struct QueryEntity<'a> {
     pub id: usize,
     entities: &'a Entities, 

@@ -9,7 +9,7 @@ use crate::prelude::*;
 
 #[derive(Debug, Default)]
 /**
- World contains the ecs, and is used to interact with it.
+World contains the ECS, and is used to interact with it.
  */
 pub struct World {
     resources: Resources,

@@ -8,6 +8,8 @@ use std::{any::{Any, TypeId}, collections::HashMap};
 
 #[derive(Default, Debug)]
 /**
+Stores 'singleton' data values in the ECS.
+
 A struct storing a hashmap of type id and value pairs. It is used as a resource storage in 
 the ecs.
  */

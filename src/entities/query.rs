@@ -12,6 +12,12 @@ use super::query_entity::*;
 //
 
 #[derive(Debug)]
+/**
+A struct used to interface with the ECS.
+
+Contains a map of components included and a reference to the Entites struct, as well
+as a vector of the type_ids contained in the query for ease of use.
+ */
 pub struct Query<'a> {
     map: u128,
     entities: &'a Entities,
