@@ -27,7 +27,7 @@ pub mod prelude {
     pub use super::entities::*;
 
     pub use std::cell::{Ref, RefMut};
-
+    pub use eyre::Result;
 }
 
 #[cfg(test)]

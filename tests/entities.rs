@@ -14,7 +14,7 @@ fn delete_entity() -> eyre::Result<()> {
 
     world.delete_entity(0)?; // delete 1st entity
 
-    let query = world.query().with_component::<Location>()?.run();
+    let query = world.query().with_component_checked::<Location>()?.run();
 
     // assert that the query is only one component
     assert_eq!(query.len(), 1);
@@ -29,7 +29,7 @@ fn delete_entity() -> eyre::Result<()> {
 
     world.spawn().insert_checked(Location(0, 0))?;
 
-    let query = world.query().with_component::<Location>()?.run();
+    let query = world.query().with_component_checked::<Location>()?.run();
 
     // assert that there are two location components in the system
     assert_eq!(query[0].len(), 2);
@@ -79,8 +79,8 @@ fn test_queries() -> eyre::Result<()> {
         .insert_checked(Size(10))?;
 
     let query = world.query()
-        .with_component::<Location>()?
-        .with_component::<Size>()?
+        .with_component_checked::<Location>()?
+        .with_component_checked::<Size>()?
         .read_indexes_to_buf(&mut indexes)
         .run();
 
@@ -118,7 +118,7 @@ fn delete_component_from_ent() -> eyre::Result<()> {
     world.delete_component_from_ent_checked::<Location>(0)?;
 
     let mut indexes = Vec::new();
-    let query = world.query().with_component::<Location>()?.with_component::<Size>()?.read_indexes_to_buf(&mut indexes).run();
+    let query = world.query().with_component_checked::<Location>()?.with_component_checked::<Size>()?.read_indexes_to_buf(&mut indexes).run();
 
     assert_eq!(query[0].len(), 1);
     // assert_eq!(query[0], 1);
@@ -143,7 +143,7 @@ fn add_component_to_ent() -> eyre::Result<()>{
 
     world.insert_component_into_entity(Unique, 0);
 
-    let query = world.query().with_component::<Location>()?.with_component::<Unique>()?.run();
+    let query = world.query().with_component_checked::<Location>()?.with_component_checked::<Unique>()?.run();
 
     // the is one 'Unique' struct
     assert_eq!(query[1].len(), 1);
@@ -168,7 +168,7 @@ fn delete_component() -> eyre::Result<()> {
 
     world.unregister_component_checked::<Location>()?;
 
-    let query = world.query().with_component::<Location>()?.run();
+    let query = world.query().with_component_checked::<Location>()?.run();
 
     assert_eq!(query[0].len(), 0);
 

@@ -28,6 +28,43 @@ impl<'a> Query<'a> {
     
     Essentially adding the type to the query.
     
+    Panics if the component queried doesn't exist in the entites struct passed in.
+    
+    ```
+    use secs::prelude::*;
+    
+    struct Component1(pub i8);
+    struct Component2(pub char);
+    
+    let mut entities = Entities::default();
+    // add in a dummy entity
+    entities.create_entity()
+        .insert_checked(Component1(-5)).unwrap()
+        .insert_checked(Component2('r')).unwrap();
+    
+    let query_res = Query::new(&entities)
+         .with_component::<Component1>().unwrap()
+         .with_component::<Component2>().unwrap()
+         .run();
+    
+    let n1s = &query_res[0];
+    let n2s = &query_res[1];
+    
+    assert_eq!(n1s.len(), n2s.len());
+    assert_eq!(n1s.len(), 1);
+    
+    ```
+     */
+    pub fn with_component<T: Any>(&mut self) -> &mut Self {
+        self.with_component_checked::<T>().unwrap()
+    }
+
+    /**
+    Function that combines the bitmask of the component type given
+    with the query's current bitmap.
+    
+    Essentially adding the type to the query.
+    
     Returns an error if the component queried doesn't exist in the entites struct passed in.
     
     ```
@@ -55,7 +92,7 @@ impl<'a> Query<'a> {
     
     ```
      */
-    pub fn with_component<T: Any>(&mut self) -> eyre::Result<&mut Self> {
+    pub fn with_component_checked<T: Any>(&mut self) -> eyre::Result<&mut Self> {
         let typeid = TypeId::of::<T>();
         if let Some(bitmask) = self.entities.get_bitmask(&typeid) {
             self.map |= bitmask;
@@ -263,7 +300,7 @@ mod tests {
 
         let mut query = Query::new(&ents);
 
-        let entities: Vec<QueryEntity> = query.with_component::<Component1>()?.run_entity()?;
+        let entities: Vec<QueryEntity> = query.with_component_checked::<Component1>()?.run_entity()?;
 
         assert_eq!(entities.len(), 1);
 
@@ -288,7 +325,7 @@ mod tests {
 
         let mut query = Query::new(&ents);
 
-        let entities: Vec<QueryEntity> = query.with_component::<Component1>()?.run_entity()?;
+        let entities: Vec<QueryEntity> = query.with_component_checked::<Component1>()?.run_entity()?;
 
         assert_eq!(entities.len(), 1);
 
@@ -306,8 +343,8 @@ mod tests {
         let ents = init_entities()?;
 
         let mut query = Query::new(&ents);
-        query.with_component::<Component1>()?
-            .with_component::<Component2>()?;
+        query.with_component_checked::<Component1>()?
+            .with_component_checked::<Component2>()?;
 
         assert_eq!(query.map, 3);
         assert_eq!(TypeId::of::<Component1>(), query.type_ids[0]);
@@ -323,8 +360,8 @@ mod tests {
         let mut indexes = Vec::new();
 
         let mut query = Query::new(&ents);
-        query.with_component::<Component1>()?
-            .with_component::<Component2>()?
+        query.with_component_checked::<Component1>()?
+            .with_component_checked::<Component2>()?
             .read_indexes_to_buf(&mut indexes);
 
         let query_res = query.run();

@@ -17,7 +17,7 @@ fn test_queries() -> eyre::Result<()> {
     let world = init_world()?;
 
     let mut query = world.query();
-    let query = query.with_component::<Foo>()?.with_component::<Bar>()?.run_entity()?;
+    let query = query.with_component_checked::<Foo>()?.with_component_checked::<Bar>()?.run_entity()?;
 
     for ent in query {
         if let Ok(foo) = ent.get_component::<Foo>() { println!("foo {:?}", foo); }
