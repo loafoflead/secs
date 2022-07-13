@@ -79,13 +79,51 @@ fn main() -> Result<()> {
         health.0 = 50;
     }
 
-    let new_query = world.query().with_component::<Health>().run(); // all Health components
+    {
+        let new_query = world.query().with_component::<Health>().run(); // all Health components
 
-    let borrow = new_query[0][1].borrow(); // get second Health that we set to 50
-    let first_health=borrow.downcast_ref::<Health>().unwrap();
+        let borrow = new_query[0][1].borrow(); // get second Health that we set to 50
+        let first_health=borrow.downcast_ref::<Health>().unwrap();
 
-    assert_eq!(first_health.0, 50);
-    println!("Asserted that the value of the first Health struct was changed to 50");
+        assert_eq!(first_health.0, 50);
+        println!("Asserted that the value of the first Health struct was changed to 50");
+    }
+
+    // Auto queries are new, and they are just a really speedy way of getting all of *one* component:
+
+    {
+        let query = world.query();
+        let auto = query.auto::<Health>(); // this is now an iterator over every health in the system.
+        
+        println!("All health values: (there are {} items)", auto.len());
+        for health in auto {
+            println!("{:?}", health);
+        }
+    }   
+
+    // we can also use this to test deleting components from entities
+    world.delete_component_from_ent::<Health>(0); // delete health from first entity
+
+    // we can assert there should be 1 health value left in the system:
+
+    {
+        let query = world.query();
+        let auto = query.auto::<Health>(); // this is now an iterator over every health in the system.
+
+        assert_eq!(auto.len(), 1);
+        println!("Asserted that there exists only 1 health component after deleting.");
+    }
+
+    {
+        // AutoQueries can also be mutable:
+        let query = world.query();
+        let auto = query.auto_mut::<Health>(); // this is now an iterator over every health in the system.
+        
+        for mut hp in auto {
+            hp.0 = 50;
+        }
+        // set all health values to 50
+    }
 
     Ok(())
 }

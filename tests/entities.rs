@@ -43,7 +43,25 @@ fn delete_entity() -> eyre::Result<()> {
     Ok(())
 }
 
+#[test]
+fn test_auto_queries() -> eyre::Result<()> {
+    let mut world = World::new();
+    world.spawn().insert_checked(Location(12, 15))?.insert_checked(Size(100))?;
+    world.spawn().insert_checked(Location(5, 6))?.insert_checked(Size(50))?;
+    world.spawn().insert_checked(Location(-9, 8))?.insert_checked(Size(25))?;
 
+    let query = world.query();
+    let auto = query.auto::<Location>(); // get every 'Location'
+
+    let mut iter = auto.into_iter();
+
+    // backwards because it is reverse order from how we inserted them
+    assert_eq!(iter.next().unwrap().0, -9); // Third loc .0 = -9
+    assert_eq!(iter.next().unwrap().0, 5); // Second loc .0 = 5
+    assert_eq!(iter.next().unwrap().0, 12); // First loc .0 = 12
+
+    Ok(())
+}
 
 #[test]
 fn create_entity() -> eyre::Result<()> {

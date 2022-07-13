@@ -5,6 +5,7 @@
 //! then filled out and run.
 
 use super::*;
+use super::auto_query::{AutoQuery, AutoQueryMut};
 use super::query_entity::*;
 
 //
@@ -43,7 +44,7 @@ impl<'a> Query<'a> {
     Panics if the component queried doesn't exist in the entites struct passed in.
     
     ```
-    use secs::prelude::*;
+    use sceller::prelude::*;
     
     struct Component1(pub i8);
     struct Component2(pub char);
@@ -80,7 +81,7 @@ impl<'a> Query<'a> {
     Returns an error if the component queried doesn't exist in the entites struct passed in.
     
     ```
-    use secs::prelude::*;
+    use sceller::prelude::*;
     
     struct Component1(pub i8);
     struct Component2(pub char);
@@ -121,7 +122,7 @@ impl<'a> Query<'a> {
     of [ComponentType](types.ComponentType.html).
 
     ```
-    use secs::prelude::*;
+    use sceller::prelude::*;
 
     struct Component1(pub i8);
     struct Component2(pub char);
@@ -191,7 +192,7 @@ impl<'a> Query<'a> {
     Executes the [Query] and returns the result in the form of a vector or [QueryEntity]s. 
 
     ```
-    use secs::prelude::*;
+    use sceller::prelude::*;
 
     struct Component1(i8);
     struct Component2(char);
@@ -237,10 +238,136 @@ impl<'a> Query<'a> {
     }
 
     /**
+    Quick and dirty way of querying one specific component.
+
+    # Examples
+
+    ```
+    use sceller::prelude::*;
+
+    struct Health(u32); struct Speed(f32);
+
+    let mut ents = Entities::default();
+
+    ents.create_entity().insert(Health(12)).insert(Speed(89.0f32));
+    ents.create_entity().insert(Health(1202)).insert(Speed(1.0f32));
+    ents.create_entity().insert(Health(3)).insert(Speed(1204.02f32));
+
+    // let's say we just want to get all of the health components immutably and print them out.
+
+    {
+        let query = Query::new(&ents);
+        let auto_query = query.auto::<Health>(); // use turbofish syntax to define the type to query for.
+
+        // we can then iterate over the auto query:
+        for health in auto_query {
+            println!("Health value: {}", health.0);
+        }
+    }
+
+    // the same process can be done but with mutable borrows:
+
+    {
+        let query = Query::new(&ents);
+        let mut auto_query = query.auto_mut::<Health>(); // use turbofish syntax to define the type to query for.
+
+        // we can then iterate over the auto query:
+        for mut health in auto_query {
+            health.0 = 10;
+        }
+    }
+
+    // now we can assert that all health values were set to '10'
+
+    {
+        let query = Query::new(&ents);
+        let auto_query = query.auto::<Health>(); // use turbofish syntax to define the type to query for.
+
+        // we can then iterate over the auto query:
+        for health in auto_query {
+            assert_eq!(health.0, 10);
+        }
+    }
+    ```
+
+    This form of query uses a struct that implements IntoIterator, as well as an iterator form.
+    The ECS's interior mutability architecture permits this kind of thing.
+
+    For more info on the implementation, check the source or the documentation for
+    [auto_query].
+     */
+    pub fn auto<T: Any>(&self) -> AutoQuery<T> {
+        AutoQuery::new(&self.entities)
+    }
+    
+    /**
+    Quick and dirty way of querying one specific component mutably.
+
+    # Examples
+
+    ```
+    use sceller::prelude::*;
+
+    struct Health(u32); struct Speed(f32);
+
+    let mut ents = Entities::default();
+
+    ents.create_entity().insert(Health(12)).insert(Speed(89.0f32));
+    ents.create_entity().insert(Health(1202)).insert(Speed(1.0f32));
+    ents.create_entity().insert(Health(3)).insert(Speed(1204.02f32));
+
+    // let's say we just want to get all of the health components immutably and print them out.
+
+    {
+        let query = Query::new(&ents);
+        let auto_query = query.auto::<Health>(); // use turbofish syntax to define the type to query for.
+
+        // we can then iterate over the auto query:
+        for health in auto_query {
+            println!("Health value: {}", health.0);
+        }
+    }
+
+    // the same process can be done but with mutable borrows:
+
+    {
+        let query = Query::new(&ents);
+        let mut auto_query = query.auto_mut::<Health>(); // use turbofish syntax to define the type to query for.
+
+        // we can then iterate over the auto query:
+        for mut health in auto_query {
+            health.0 = 10;
+        }
+    }
+
+    // now we can assert that all health values were set to '10'
+
+    {
+        let query = Query::new(&ents);
+        let auto_query = query.auto::<Health>(); // use turbofish syntax to define the type to query for.
+
+        // we can then iterate over the auto query:
+        for health in auto_query {
+            assert_eq!(health.0, 10);
+        }
+    }
+    ```
+
+    This form of query uses a struct that implements IntoIterator, as well as an iterator form.
+    The ECS's interior mutability architecture permits this kind of thing.
+
+    For more info on the implementation, check the source or the documentation for
+    [auto_query].
+     */
+    pub fn auto_mut<T: Any>(&self) -> AutoQueryMut<T> {
+        AutoQueryMut::new(&self.entities)
+    }
+
+    /**
     Gets the indexes of all the components in this query and fills them into a passed buffer.
     
     ```
-    use secs::prelude::*;
+    use sceller::prelude::*;
     
     struct Hi(u8);
     struct Hello(usize);
@@ -300,6 +427,26 @@ mod tests {
     use std::cell::{Ref, RefMut};
 
     use super::*;
+
+    #[test]
+    fn auto_query_test() -> Result<()> {
+        let mut ents = Entities::default();
+
+        // add in a dummy entity
+        ents.create_entity()
+            .insert(Component1(-5))
+            .insert(Component2('r'));
+
+        let query = Query::new(&ents);
+        let auto = query.auto::<Component1>();
+
+        for e in auto {
+            // let component = e.get_component();
+            dbg!(e);
+        }
+
+        Ok(())
+    }
 
     #[test]
     fn query_for_entity_mut() -> eyre::Result<()> {
@@ -419,7 +566,9 @@ mod tests {
         Ok(ents)
     }
 
+    #[derive(Debug)]
     struct Component1(pub i8);
 
+    #[derive(Debug)]
     struct Component2(pub char);
 }
