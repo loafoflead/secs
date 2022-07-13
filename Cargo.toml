@@ -3,6 +3,9 @@ name = "secs"
 version = "0.1.0"
 edition = "2021"
 authors = ["loafoflead"]
+
+license = "MIT license"
+
 description = "An ECS crate written in Rust based on the tutorial series by Brooks Builds on Youtube."
 homepage = "https://github.com/loafoflead/secs"
 repository = "https://github.com/loafoflead/secs"
