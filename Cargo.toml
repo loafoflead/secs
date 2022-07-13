@@ -20,4 +20,4 @@ keywords = ["ecs", "dod"]
 
 [dependencies]
 eyre = "0.6.8"
-thiserror = "*"
+thiserror = "1.0.31"
