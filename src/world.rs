@@ -30,7 +30,7 @@ impl World {
      can later be retrieved using [get_resource()](struct.World.html#method.get_resource) or [get_resource_mut()](struct.World.html#method.get_resource_mut)
      
      ```
-     use secs::prelude::*;
+     use sceller::prelude::*;
      
      struct ImportantResource(String);
      
@@ -53,7 +53,7 @@ impl World {
      Makes use of [Resources::get_ref()](struct.Resources.html#method.get_ref).
      
      ```
-     use secs::prelude::*;
+     use sceller::prelude::*;
      
      struct FpsCounter(u16);
      
@@ -74,7 +74,7 @@ impl World {
       Makes use of [Resources::get_mut()](struct.Resources.html#method.get_mut).
       
       ```
-      use secs::prelude::*;
+      use sceller::prelude::*;
       
       struct Thing(u8);
       
@@ -110,7 +110,7 @@ impl World {
       operation. 
       
       ```
-      use secs::prelude::*;
+      use sceller::prelude::*;
       
       struct Thing(u8);
       
@@ -129,7 +129,7 @@ impl World {
       Creates a new entity and returns current Entities instance.
       
       ```
-      use secs::prelude::*;
+      use sceller::prelude::*;
       
       struct Thing(u8);
       
@@ -208,7 +208,7 @@ impl World {
     Creates and returns a new query, allowing the user to query for elements in the ECS.
     
     ```
-    use secs::prelude::*;
+    use sceller::prelude::*;
     
     struct Thing(u8);
     

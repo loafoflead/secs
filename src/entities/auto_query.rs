@@ -109,12 +109,18 @@ auto queries in the same scope.
 The solution is to either drop them manually or to enclose them in a block:
 
 ```
+use sceller::prelude::*;
+
+struct Health; // example struct
+
 {
+    let ents = Entities::default();
+
     let query = Query::new(&ents);
-    let mut auto = query.auto<Health>();
+    let mut auto = query.auto::<Health>();
     
-    ...
-} <- ensures that the mutable borrow is dropped at the end of this block
+    // <snip!>
+} //<- ensures that the mutable borrow is dropped at the end of this block
 ```
 
 It contains 'phantom' which is a PhantomData<T>, since the query needs to contain a type 

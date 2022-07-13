@@ -22,7 +22,7 @@ impl Resources {
     Creates and returns a new Resources struct using its Default Implementation.
     
     ```
-    use secs::prelude::*;
+    use sceller::prelude::*;
     
     struct Health(u8);
     
@@ -38,7 +38,7 @@ impl Resources {
     the Resources struct provided.
     
     ```
-    use secs::prelude::*;
+    use sceller::prelude::*;
     
     struct Health(u8);
     
@@ -62,7 +62,7 @@ impl Resources {
     Note: This function internally uses downcast_ref()
 
     ```
-    use secs::prelude::*;
+    use sceller::prelude::*;
 
     struct Health(f32);
 
@@ -86,7 +86,7 @@ impl Resources {
     Optionally returns a mutable reference to a value of the given type.
     
     ```
-    use secs::prelude::*;
+    use sceller::prelude::*;
     
     #[derive(Debug, PartialEq)]
     struct Health(i32);
@@ -116,7 +116,7 @@ impl Resources {
     Attempts to delete and return a resource. 
     
     ```
-    use secs::prelude::*;
+    use sceller::prelude::*;
     
     #[derive(Debug, PartialEq)]
     struct Health(i32);
@@ -135,7 +135,7 @@ impl Resources {
     returns None if the type doesn't exist;
     
     ```
-    use secs::prelude::*;
+    use sceller::prelude::*;
     
     #[derive(Debug, PartialEq)]
     struct Health(i32);

@@ -294,7 +294,7 @@ impl<'a> Query<'a> {
     The ECS's interior mutability architecture permits this kind of thing.
 
     For more info on the implementation, check the source or the documentation for
-    [auto_query].
+    [super::auto_query].
      */
     pub fn auto<T: Any>(&self) -> AutoQuery<T> {
         AutoQuery::new(&self.entities)
@@ -357,7 +357,7 @@ impl<'a> Query<'a> {
     The ECS's interior mutability architecture permits this kind of thing.
 
     For more info on the implementation, check the source or the documentation for
-    [auto_query].
+    [super::auto_query].
      */
     pub fn auto_mut<T: Any>(&self) -> AutoQueryMut<T> {
         AutoQueryMut::new(&self.entities)

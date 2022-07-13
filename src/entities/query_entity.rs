@@ -23,7 +23,7 @@ impl<'a> QueryEntity<'a> {
     Constructor function, takes the index of the entity queried and a reference to the entities struct.
 
     ```
-    use secs::prelude::*;
+    use sceller::prelude::*;
 
     let ents = Entities::default();
 
@@ -39,7 +39,7 @@ impl<'a> QueryEntity<'a> {
     Returns a [Ref] to a component in this [QueryEntity].
 
     ```
-    use secs::prelude::*;
+    use sceller::prelude::*;
 
     struct Component1(i8);
     struct Component2(char);
@@ -88,7 +88,7 @@ impl<'a> QueryEntity<'a> {
     Returns a [RefMut] to a component in this [QueryEntity].
 
     ```
-    use secs::prelude::*;
+    use sceller::prelude::*;
 
     struct Component1(i8);
     struct Component2(char);

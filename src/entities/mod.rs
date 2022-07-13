@@ -5,14 +5,14 @@
 
 mod query;
 mod query_entity;
-mod auto_query;
+pub mod auto_query;
 
 use std::{any::{Any, TypeId}, rc::Rc, cell::{RefCell}, collections::HashMap};
 use eyre::*;
 
 pub use self::query::Query;
 pub use self::query_entity::QueryEntity;
-
+pub use self::auto_query::*;
 
 pub type ComponentType = Rc<RefCell<dyn Any>>;
 
@@ -98,7 +98,7 @@ impl Entities {
       effect the latest entity added with this function.
       
       ```
-      use secs::prelude::*;
+      use sceller::prelude::*;
       use std::any::TypeId;
       
       struct Health(u8);
@@ -136,7 +136,7 @@ impl Entities {
       entities.
       
       ```
-      use secs::prelude::*;
+      use sceller::prelude::*;
       use std::any::TypeId;
       
       struct Health(u8);
@@ -161,7 +161,7 @@ impl Entities {
       entities.
       
       ```
-      use secs::prelude::*;
+      use sceller::prelude::*;
       use std::any::TypeId;
       
       struct Health(u8);
@@ -201,7 +201,7 @@ impl Entities {
       Deletes a component from an entity using the entity's index in the ECS. 
       
       ```
-      use secs::prelude::*;
+      use sceller::prelude::*;
       use std::any::TypeId;
       
       struct Health(u8);
@@ -258,7 +258,7 @@ impl Entities {
       Deletes a component from an entity using the entity's index in the ECS. 
       
       ```
-      use secs::prelude::*;
+      use sceller::prelude::*;
       use std::any::TypeId;
       
       struct Health(u8);
@@ -291,7 +291,7 @@ impl Entities {
       Inserts a new instance of a component into an entity using it's id. (index)
       
       ```
-      use secs::prelude::*;
+      use sceller::prelude::*;
       
       struct Foo(f32);
       struct Bar(u16);
@@ -326,7 +326,7 @@ impl Entities {
       Inserts a new instance of a component into an entity using it's id. (index)
       
       ```
-      use secs::prelude::*;
+      use sceller::prelude::*;
       
       struct Foo(f32);
       struct Bar(u16);
@@ -379,7 +379,7 @@ impl Entities {
     Deletes all occurences of a component from the Entity Component System and unregisters it.
 
     ```
-    use secs::prelude::*;
+    use sceller::prelude::*;
 
     struct Foo(char); struct Bar(u16);
 
@@ -417,7 +417,7 @@ impl Entities {
     Deletes all occurences of a component from the Entity Component System and unregisters it.
 
     ```
-    use secs::prelude::*;
+    use sceller::prelude::*;
 
     struct Foo(char); struct Bar(u16);
 
