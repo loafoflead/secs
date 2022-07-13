@@ -1,26 +1,26 @@
-# __SECS__: <i>Snug Entity Component System</i>
+# _SCELLER_: <i>Systems Components Entities Lacking List Ekindled in Rust</i>
 
-## The Entity Component System that was **not** given the name because it sounds a bit funny.
+## The Entity Component System that was **not** given the name because someone had already taken SECS.
 
-<p1>SECS is en entity component system written in Rust built following a tutorial by [Brooks Builds](https://www.youtube.com/channel/UCT1-XRVnJA-wws2bfbLbFcQ) on Youtube and his [series on how to create an entity component system](https://www.youtube.com/watch?v=CTuTEi4YUb8&list=PLrmY5pVcnuE_SQSzGPWUJrf9Yo-YNeBYs) (written in Rust).</p1>
+<p1>SCELLER is en entity component system written in Rust built following a tutorial by [Brooks Builds](https://www.youtube.com/channel/UCT1-XRVnJA-wws2bfbLbFcQ) on Youtube and his [series on how to create an entity component system](https://www.youtube.com/watch?v=CTuTEi4YUb8&list=PLrmY5pVcnuE_SQSzGPWUJrf9Yo-YNeBYs) (written in Rust).</p1>
 
-<p1>Secs is built on a DOD which means **DATA ORIENTED DESIGN**. This means that instead of your code being centered around objects, all you do is write code that takes **data** concretely, writing **system** around accessing this data. If you want to learn more, I suggest Googling (or using Bing. If you *reaaally* want to) the term [ECS](https://en.wikipedia.org/wiki/Entity_component_system).</p1>
+<p1>Sceller is built on a DOD which means **DATA ORIENTED DESIGN**. This means that instead of your code being centered around objects, all you do is write code that takes **data** concretely, writing **system** around accessing this data. If you want to learn more, I suggest Googling (or using Bing. If you *reaaally* want to) the term [ECS](https://en.wikipedia.org/wiki/Entity_component_system).</p1>
 
 This project currently has no graphics, audio, video, literally anything. It ist JUST and entity component system. If you're looking for something actually useful, try [bevy](https://bevyengine.org/), it's really very cool. 
 
 If you want to install and tinker around with the code yourself, run the following commands if you're on Windows:
 
-First, you're going to want to create a new directory: (you can name the folder whatever you want, I named mine secs_test, I've never had secs before.)
+First, you're going to want to create a new directory: (you can name the folder whatever you want, I named mine sceller_test, I've never had secs before.)
 ```bash
-C:\...> mkdir secs_test\
-C:\...> cd secs_test\
+C:\...> mkdir sceller_test\
+C:\...> cd sceller_test\
 C:\...> dir
 C:\...> 
 ```
 Then clone the repository into that directory, making sure to add a '.' (fullstop) at the end of the command to make sure to clone into the current directory.
 ```bash
-C:\...> git clone https://github.com/loafoflead/secs .
-Cloning into 'secs'...
+C:\...> git clone https://github.com/loafoflead/sceller .
+Cloning into 'sceller'...
 remote: Enumerating objects: 78, done.
 remote: Counting objects: 100% (78/78), done.
 remote: Compressing objects: 100% (43/43), done.
@@ -56,4 +56,4 @@ If you want to find some actual implementations of the crate, check the ```examp
 C:\...> cargo run --example resource_example
 ```
 
-Happy secs!
+Happy ecs-ing!

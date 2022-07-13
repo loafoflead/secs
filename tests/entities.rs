@@ -1,4 +1,4 @@
-use secs::prelude::*;
+use sceller::prelude::*;
 
 #[test]
 fn delete_entity() -> eyre::Result<()> {

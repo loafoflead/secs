@@ -1,4 +1,4 @@
-use secs::prelude::*;
+use sceller::prelude::*;
 
 #[derive(Debug)]
 struct Health(u32);

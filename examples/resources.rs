@@ -1,4 +1,4 @@
-use secs::prelude::*;
+use sceller::prelude::*;
 
 #[derive(Debug)]
 // resource that should be globally accessible, and can be used at any time and mutated.

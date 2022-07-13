@@ -1,4 +1,4 @@
-//! SECS or Snug Entity Component System (no other reason for it to be called that) is an ECS crate.
+//! SCELLER or Systems Components Entities Lacking List Ekindled in Rust is an ECS crate.
 //! 
 //! ## SOURCES
 //! It is modelled from the tutorial series by [Brooks Builds](https://www.youtube.com/channel/UCT1-XRVnJA-wws2bfbLbFcQ) on Youtube and his series on [how to make an ECS in rust](https://www.youtube.com/watch?v=CTuTEi4YUb8&list=PLrmY5pVcnuE_SQSzGPWUJrf9Yo-YNeBYs).
@@ -6,7 +6,7 @@
 //! This project is likely riddled with bugs, and yet I am very proud of it.
 //! 
 //! ## HOW TO START
-//! For tips and pointers on how to have SECS, check the examples folder, or ask a knowledgeable friend. (wow that's an ugly word)
+//! For tips and pointers on how to use SCELLER, check the examples folder, or ask a knowledgeable friend.
 //! Most importantly, have fun!
 //! The '[prelude]' module contains the only modules you will probably ever need.
 //! 
