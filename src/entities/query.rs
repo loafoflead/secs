@@ -21,7 +21,7 @@ as a vector of the type_ids contained in the query for ease of use.
  */
 pub struct Query<'a> {
     map: u128,
-    entities: &'a Entities,
+    pub(super) entities: &'a Entities,
     type_ids: Vec<TypeId>,
 }
 

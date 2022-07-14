@@ -6,6 +6,7 @@
 mod query;
 mod query_entity;
 pub mod auto_query;
+mod fn_query;
 
 use std::{any::{Any, TypeId}, rc::Rc, cell::{RefCell}, collections::HashMap};
 use eyre::*;
@@ -13,6 +14,7 @@ use eyre::*;
 pub use self::query::Query;
 pub use self::query_entity::QueryEntity;
 pub use self::auto_query::*;
+pub use self::fn_query::*;
 
 pub type ComponentType = Rc<RefCell<dyn Any>>;
 
