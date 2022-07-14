@@ -1,3 +1,6 @@
+mod fn_query_mut;
+pub use fn_query_mut::*;
+
 use std::{
     any::{Any, TypeId},
     cell::{Ref, RefCell},
@@ -20,6 +23,7 @@ impl<'a, T> FnQuery<'a, T> {
     }
 }
 
+// Implementation of actual functions
 impl<'a> Query<'a> {
     pub fn query_fn<F, T: 'a>(&self, gen: F)
     where
@@ -226,121 +230,3 @@ impl<'a, T: 'a> std::iter::Iterator for FnQueryIntoIterator<'a, T> {
         self.components.pop()
     }
 }
-
-// fn get_vec_of_relevent_types<'a, T: 'static>(entities: &'a Entities) -> Vec<Ref<T>> {
-//     let typeid = TypeId::of::<T>();
-
-//         let selfmap = entities.bit_masks.get(&typeid).unwrap();
-
-//         let all_components = entities.components.get(&typeid).unwrap();
-//         // get all components with the type of this AutoQuery
-
-//         // get all valid components (not deleted or None)
-//         let components = all_components.into_iter().enumerate()
-//             .map(|(ind, c)| {
-//                 if (entities.map[ind] & selfmap == *selfmap) && c.is_some() {
-//                     Some(c.as_ref().unwrap())
-//                 } else {
-//                     None
-//                 }
-//             })
-//             .flatten()
-//             .collect::<Vec<&Rc<RefCell<dyn Any>>>>();
-
-//         components.into_iter()
-//             .map(|c| {
-//                 let component = c.as_ref();
-//                 let borrow = component.borrow();
-
-//                 Ref::map(borrow, |any| {
-//                     any.downcast_ref::<T>().unwrap()
-//                 })
-//             })
-//             .collect::<Vec<Ref<T>>>()
-// }
-
-// use super::{Entities, Query};
-
-// // Any function under the form:
-// //
-// // fn(impl FnQueryParams) -> ()
-// //
-// // should be able to call the function
-// pub trait IntoQueryFunction<'a, P, A> {
-//     type QueryType: FnQueryParams<'a, P> + Sized;
-
-//     fn get_query(&self) -> Self::QueryType;
-// }
-
-// // A is anything
-// // this covers any function with a FnQeuryParams as parameter
-// impl<'a, F, P, A> IntoQueryFunction<'a, P, A> for F
-// where F: Fn(dyn FnQueryParams<'a, P, Output = Vec<Ref<'a, A>>>),
-//       A: 'a,
-// {
-//     type QueryType = dyn FnQueryParams<'a, P, Output = Vec<Ref<'a, A>>>;
-
-//     fn get_query(&self) -> Self::QueryType { }
-// }
-
-// pub trait FnQueryParams<'a, P: Sized> {
-//     type Output: Sized;
-
-//     fn run(&self, entities: &'a Entities) -> Self::Output;
-// }
-
-// pub struct FnQuery<P> {
-//     phantom: PhantomData<P>
-// }
-
-// A query with only one type
-// impl<'a, P: 'static> Params<'a> for AutoQuery<'a, P>
-// where P: Any
-// {
-//     type Return = AutoQueryIntoIterator<'a, P>;
-
-//     fn run(entities: &'a Entities) -> Self::Return {
-//         let this = AutoQuery::new(entities);
-//         this.into_iter()
-
-//         // let typeid = TypeId::of::<P>();
-
-//         // let selfmap = entities.bit_masks.get(&typeid).unwrap();
-
-//         // let all_components = entities.components.get(&typeid).unwrap();
-//         // // get all components with the type of this AutoQuery
-
-//         // // get all valid components (not deleted or None)
-//         // let components = all_components
-//         //     .into_iter()
-//         //     .enumerate()
-//         //     .map(|(ind, c)| {
-//         //         if (entities.map[ind] & selfmap == *selfmap) && c.is_some() {
-//         //             Some(c.as_ref().unwrap())
-//         //         } else {
-//         //             None
-//         //         }
-//         //     })
-//         //     .flatten()
-//         //     .collect::<Vec<&Rc<RefCell<dyn Any>>>>();
-
-//         // components
-//         //     .into_iter()
-//         //     .map(|c| {
-//         //         let component = c.as_ref();
-//         //         let borrow = component.borrow();
-
-//         //         Ref::map(borrow, |any| any.downcast_ref::<P>().unwrap())
-//         //     })
-//         //     .collect::<Vec<Ref<P>>>()
-//     }
-// }
-
-// impl<'a> Query<'a> {
-//     pub fn query_fn<Q: FnQueryParams<'a, P> + 'static, P, F: IntoQueryFunction<'a, Q, P>>(&self, function: F) {
-
-//         let query = function.get_query().run(&self.entities);
-
-//         function(query);
-//     }
-// }

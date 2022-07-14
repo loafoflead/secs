@@ -20,6 +20,25 @@ fn query_functions() -> Result<()> {
     Ok(())
 }
 
+#[test]
+fn query_functions_mut() -> Result<()> {
+    let world = init_world()?;
+
+    let query = world.query();
+    
+    query.query_fn(&update_healths);
+    query.query_fn_mut(&change_healths);
+    query.query_fn(&update_healths);
+
+    Ok(())
+}
+
+fn change_healths(health: FnQueryMut<Health>) {
+    for mut hp in health.into_iter() {
+        hp.0 += 10;
+    }
+}
+
 fn update_healths(healths: FnQuery<Health>) {
     for thing in healths.into_iter() {
         println!("{:?}", thing);
