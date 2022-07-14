@@ -2,7 +2,10 @@ use sceller::prelude::*;
 
 #[derive(Debug)]
 struct Health(u32);
+#[derive(Debug)]
 struct Speed(u32);
+
+struct Enemy;
 
 fn main() -> Result<()> {
     let mut world = World::new();
@@ -10,12 +13,14 @@ fn main() -> Result<()> {
     // insert_checked will return an error if the insertion of a new component fails.
     world.spawn()
         .insert_checked(Health(12))?
-        .insert_checked(Speed(15))?;
+        .insert_checked(Speed(15))?        
+        .insert(Enemy);
 
     // on the other hand, insert will panic if there is an error. (which is unlikely)
     world.spawn()
         .insert(Health(12093))
-        .insert(12_u32);
+        .insert(12_u32)
+        .insert(Enemy);
 
     // Any struct or even primitive that implements the 'Any' trait (so basically everything) can 
     // be a component. As you can see, in our second entity I inserted a u32.
@@ -125,5 +130,48 @@ fn main() -> Result<()> {
         // set all health values to 50
     }
 
+    // Another method of querying is with Query Functions.
+    // These are a little similar to [bevy](https://bevyengine.org/) systems, although a thousand times more
+    // limiting and about a million times less sophisticated.
+
+    // you pass in a function with the query in it's signature to make the query, as so:
+
+    println!("Beginning function queries:");
+
+    let query = world.query();
+    query.query_fn(&print_healths); // this will execute this function and fill in the query
+
+    // this function also exists in mutable form:
+
+    query.query_fn_mut(&change_healths);
+
+    query.query_fn(&print_healths); // Verify that the health values have changed
+    
+    // query functions currently support a tuple field of up to three components:
+
+    query.query_fn(&print_two); // this also works with a function with a tuple of three components right now (maybe more later)
+
+    // I have not yet implemented multiply queries in one function, but i might be able 
+    // to wrap my head around it. hopefully.
+
     Ok(())
+}
+
+fn print_healths(healths: FnQuery<Health>) {
+    for health in healths.into_iter() {
+        println!("{:?}", health);
+    }
+}
+
+fn change_healths(healths: FnQueryMut<Health>) {
+    for mut health in healths.into_iter() {
+        health.0 += 100;
+    }
+}
+
+fn print_two(query: FnQuery<(Speed, Enemy)>) {
+    // support tuple destructuring
+    for (speed, _) in query.iter() {
+        println!("Enemy: {:?}", speed);
+    }
 }

@@ -6,6 +6,58 @@ use std::{
 
 use super::{Entities, Query};
 
+/**
+The type of the function parameter of a mutable function query. See [FnQuery](struct.FnQuery.html)
+for the immutable implementation of this type.
+
+This struct permits the use of [Query::query_fn_mut], where a function is passed into a query to execute it.
+
+# Examples
+
+```
+use sceller::prelude::*;
+
+struct Health(u32);
+
+fn change_healths(healths: FnQueryMut<Health>) {
+    for mut hp in healths.into_iter() {
+        hp.0 += 9;
+    }
+}
+
+let mut world = World::new();
+
+world.spawn().insert(Health(10));
+
+let query = world.query();
+query.query_fn_mut(&change_healths); // runs this function with the querys result as a parameter.
+```
+
+As of now the struct can handle up to three parameters in a query in the form of a tuple:
+
+```
+use sceller::prelude::*;
+
+struct Health(u32);
+struct Speed(u32);
+struct Size(u32);
+
+fn change_all(healths: FnQueryMut<(Health, Speed, Size)>) {
+    for (mut hp, speed, mut size) in healths.iter() {
+        hp.0 += 5;
+        println!("{}", speed.0);
+        size.0 -= 2;
+    }
+}
+
+let mut world = World::new();
+
+world.spawn().insert(Health(10)).insert(Speed(65)).insert(Size(15));
+
+let query = world.query();
+query.query_fn_mut(&change_all); // runs this function with the querys result as a parameter.
+```
+ */
 pub struct FnQueryMut<'a, T> {
     entities: &'a Entities,
     phantom: PhantomData<T>,
@@ -21,6 +73,9 @@ impl<'a, T> FnQueryMut<'a, T> {
 }
 
 impl<'a> Query<'a> {
+    /**
+    Mutable implementation of [Query::query_fn]
+     */
     pub fn query_fn_mut<F, T: 'a>(&self, gen: F)
     where
         F: Fn(FnQueryMut<'a, T>),

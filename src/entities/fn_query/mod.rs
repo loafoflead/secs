@@ -9,6 +9,56 @@ use std::{
 
 use super::{Entities, Query};
 
+/**
+The type of the function parameter of an immutable function query. See [FnQueryMut](struct.FnQueryMut.html)
+for the mutable implementation of this type.
+
+This struct permits the use of [Query::query_fn], where a function is passed into a query to execute it.
+
+# Examples
+
+```
+use sceller::prelude::*;
+
+struct Health(u32);
+
+fn print_healths(healths: FnQuery<Health>) {
+    for hp in healths.into_iter() {
+        println!("{}", hp.0);
+    }
+}
+
+let mut world = World::new();
+
+world.spawn().insert(Health(10));
+
+let query = world.query();
+query.query_fn(&print_healths); // runs this function with the querys result as a parameter.
+```
+
+As of now the struct can handle up to three parameters in a query in the form of a tuple:
+
+```
+use sceller::prelude::*;
+
+struct Health(u32);
+struct Speed(u32);
+struct Size(u32);
+
+fn print_all(healths: FnQuery<(Health, Speed, Size)>) {
+    for (hp, speed, size) in healths.iter() {
+        println!("{}, {}, {}", hp.0, speed.0, size.0);
+    }
+}
+
+let mut world = World::new();
+
+world.spawn().insert(Health(10)).insert(Speed(65)).insert(Size(15));
+
+let query = world.query();
+query.query_fn(&print_all); // runs this function with the querys result as a parameter.
+```
+ */
 pub struct FnQuery<'a, T> {
     entities: &'a Entities,
     phantom: PhantomData<T>,
@@ -25,6 +75,53 @@ impl<'a, T> FnQuery<'a, T> {
 
 // Implementation of actual functions
 impl<'a> Query<'a> {
+    /**
+    Takes in a function to run with the query's result passed as parameters.
+
+    # Examples
+
+    ```
+    use sceller::prelude::*;
+
+    struct Health(u32);
+
+    fn print_healths(healths: FnQuery<Health>) {
+        for hp in healths.into_iter() {
+            println!("{}", hp.0);
+        }
+    }
+
+    let mut world = World::new();
+
+    world.spawn().insert(Health(10));
+
+    let query = world.query();
+    query.query_fn(&print_healths); // runs this function with the querys result as a parameter.
+    ```
+
+    As of now the struct can handle up to three parameters in a query in the form of a tuple:
+
+    ```
+    use sceller::prelude::*;
+
+    struct Health(u32);
+    struct Speed(u32);
+    struct Size(u32);
+
+    fn print_all(healths: FnQuery<(Health, Speed, Size)>) {
+        for (hp, speed, size) in healths.iter() {
+            println!("{}, {}, {}", hp.0, speed.0, size.0);
+        }
+    }
+
+    let mut world = World::new();
+
+    world.spawn().insert(Health(10)).insert(Speed(65)).insert(Size(15));
+
+    let query = world.query();
+    query.query_fn(&print_all); // runs this function with the querys result as a parameter.
+    ```
+     */
     pub fn query_fn<F, T: 'a>(&self, gen: F)
     where
         F: Fn(FnQuery<'a, T>),
