@@ -85,7 +85,7 @@ where
 The type of the function parameter of a mutable function query. See [FnQueryMut](struct.FnQueryMut.html)
 for the immutable implementation of this type.
 
-This struct permits the use of [Query::query_fn_mut], where a function is passed into a query to execute it.
+This struct permits the use of [super::Query::query_fn], where a function is passed into a query to execute it.
 
 # Examples
 
