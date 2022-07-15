@@ -141,9 +141,9 @@ fn main() -> Result<()> {
     let query = world.query();
     query.query_fn(&print_healths); // this will execute this function and fill in the query
 
-    // this function also exists in mutable form:
+    // this function works the same for Query Functions taking mutable arguments
 
-    query.query_fn_mut(&change_healths);
+    query.query_fn(&change_healths);
 
     query.query_fn(&print_healths); // Verify that the health values have changed
     
@@ -151,10 +151,22 @@ fn main() -> Result<()> {
 
     query.query_fn(&print_two); // this also works with a function with a tuple of three components right now (maybe more later)
 
-    // I have not yet implemented multiply queries in one function, but i might be able 
-    // to wrap my head around it. hopefully.
+    // Query Functions as of now can take up to three arguments as queries:
+
+    query.query_fn(print_healths_and_speeds); // this also works with a query taking three arguments    
+
+    // this can also be done with query_fn_mut, and both types can be combines into a single function
 
     Ok(())
+}
+
+fn print_healths_and_speeds(healths: FnQuery<Health>, speeds: FnQuery<Speed>) {
+    for health in healths.into_iter() {
+        println!("{:?}", health);
+    }
+    for speed in speeds.into_iter() {
+        println!("{:?}", speed);
+    }
 }
 
 fn print_healths(healths: FnQuery<Health>) {

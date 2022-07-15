@@ -4,10 +4,85 @@ use std::{
     marker::PhantomData, rc::Rc,
 };
 
-use super::{Entities, Query};
+use super::{Entities, FnQueryParams};
+
+
+impl<'a, T> FnQueryParams<'a> for FnQueryMut<'a, T> {
+    fn get(entities: &'a Entities) -> Self {
+        Self::new(entities) // because this is the generic constructor for FnQuery
+    }
+}
+
+/*
+    This blanket type allows the trait to be implemented for many different function signatures.
+    
+    It can then be implemented in function of its parameters to make a unique generic each time.
+
+    The next step into making it possible to mix mutable and immutable query arguments 
+    is to do the same thing for FnQuery and FnQueryMut, and make a trait like:
+
+    trait FnQueryParams<T> {  
+        type ThisType;
+
+        fn get(entities: &Entities) -> Self::ThisType;
+    }
+    where T will be the type of the query, so
+
+    impl<'a, T> FnQueryParams<T> for FnQuery<'a, T> {
+        type ThisType = FnQuery<'a, T>;
+
+        fn get(entities: &Entites) -> Self::ThisType {
+            Self::new(entities); // because this is the generic constructor for FnQuery
+        }
+    }
+
+    and then use this instead of FnQuery<'a, T> ==> FnQueryParams<T>
+    which should I think still allow us to do this:
+
+    impl<F, T> IntoQueryFunction<'a, FnQueryParams<T>> for F
+    where 
+        F: Fn<FnQueryParams<T>>,
+    {
+        fn run(self, entities: &Entites) {
+            (self)(FnQueryParams<T>::get(entities))
+        }
+    }
+*/
+pub trait IntoQueryFunctionMut<ArgList> {
+    fn run(self, entities: &Entities);
+}
+
+impl<'a, 'b, 'c, Func, T, T2> IntoQueryFunctionMut<(FnQueryMut<'a, T>, FnQueryMut<'b, T2>)> for Func
+where
+    Func: for<'r, 's> Fn(FnQueryMut<'r, T>, FnQueryMut<'s, T2>),
+{
+    fn run(self, entities: &Entities) {
+        (self)(FnQueryMut::new(entities), FnQueryMut::new(entities))
+    }
+}
+
+impl<Func, T, T2, T3> IntoQueryFunctionMut<(FnQueryMut<'_, T>, FnQueryMut<'_, T2>, FnQueryMut<'_, T3>)> for Func
+where
+    Func: for<'r, 's, 'e> Fn(FnQueryMut<'r, T>, FnQueryMut<'s, T2>, FnQueryMut<'e, T3>),
+{
+    fn run(self, entities: &Entities) {
+        (self)(FnQueryMut::new(entities), FnQueryMut::new(entities), FnQueryMut::new(entities))
+    }
+}
+
+impl<'a, F, T> IntoQueryFunctionMut<FnQueryMut<'a, T>> for F
+where
+    F: Fn(FnQueryMut<'_, T>),
+    T: Any,
+    // T1: Any, T2: Any
+{
+    fn run(self, entities: &Entities) {
+        self(FnQueryMut::new(entities))
+    }
+}
 
 /**
-The type of the function parameter of a mutable function query. See [FnQuery](struct.FnQuery.html)
+The type of the function parameter of a mutable function query. See [FnQueryMut](struct.FnQueryMut.html)
 for the immutable implementation of this type.
 
 This struct permits the use of [Query::query_fn_mut], where a function is passed into a query to execute it.
@@ -72,17 +147,17 @@ impl<'a, T> FnQueryMut<'a, T> {
     }
 }
 
-impl<'a> Query<'a> {
-    /**
-    Mutable implementation of [Query::query_fn]
-     */
-    pub fn query_fn_mut<F, T: 'a>(&self, gen: F)
-    where
-        F: Fn(FnQueryMut<'a, T>),
-    {
-        gen(FnQueryMut::new(&self.entities))
-    }
-}
+// impl<'a> Query<'a> {
+//     /**
+//     Mutable implementation of [Query::query_fn]
+//      */
+//     pub fn query_fn_mut<F, T: 'a>(&self, gen: F)
+//     where
+//         F: IntoQueryFunctionMut<T>,
+//     {
+//         gen.run(self.entities)
+//     }
+// }
 
 impl<'a, T: 'static> std::iter::IntoIterator for FnQueryMut<'a, T>
 where T: Any,

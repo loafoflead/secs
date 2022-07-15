@@ -9,6 +9,86 @@ use std::{
 
 use super::{Entities, Query};
 
+trait FnQueryParams<'a>
+{  
+    fn get(entities: &'a Entities) -> Self where Self: Sized;
+}
+
+impl<'a, T> FnQueryParams<'a> for FnQuery<'a, T> {
+    fn get(entities: &'a Entities) -> Self {
+        Self::new(entities) // because this is the generic constructor for FnQuery
+    }
+}
+
+impl<'a, F, T> IntoQueryFunction<'a, T> for F
+where 
+    T: FnQueryParams<'a>,
+    F: Fn(T),
+{
+    fn run(self, entities: &'a Entities) {
+        (self)(FnQueryParams::get(entities))
+    }
+}
+impl<'a, Func, T1, T2> IntoQueryFunction<'a, (T1, T2)> for Func
+where
+    Func: Fn(T1, T2),
+    T1: FnQueryParams<'a>, T2: FnQueryParams<'a>,
+{
+    fn run(self, entities: &'a Entities) {
+        (self)(FnQueryParams::get(entities), FnQueryParams::get(entities))
+    }
+}
+impl<'a, Func, T1, T2, T3> IntoQueryFunction<'a, (T1, T2, T3)> for Func
+where
+    Func: Fn(T1, T2, T3),
+    T1: FnQueryParams<'a>, T2: FnQueryParams<'a>,
+    T3: FnQueryParams<'a>,
+{
+    fn run(self, entities: &'a Entities) {
+        (self)(
+            FnQueryParams::get(entities), 
+            FnQueryParams::get(entities),
+            FnQueryParams::get(entities)
+        )
+    }
+}
+
+
+pub trait IntoQueryFunction<'a, ArgList> {
+    fn run(self, entities: &'a Entities);
+}
+
+// impl<'a, 'b, 'c, Func, T, T2> IntoQueryFunction<(FnQuery<'a, T>, FnQuery<'b, T2>)> for Func
+// where
+//     Func: for<'r, 's> Fn(FnQuery<'r, T>, FnQuery<'s, T2>),
+// {
+//     fn run(self, entities: &Entities) {
+//         (self)(FnQuery::new(entities), FnQuery::new(entities))
+//     }
+// }
+
+// impl<Func, T, T2, T3> IntoQueryFunction<(FnQuery<'_, T>, FnQuery<'_, T2>, FnQuery<'_, T3>)> for Func
+// where
+//     Func: for<'r, 's, 'e> Fn(FnQuery<'r, T>, FnQuery<'s, T2>, FnQuery<'e, T3>),
+// {
+//     fn run(self, entities: &Entities) {
+//         (self)(FnQuery::new(entities), FnQuery::new(entities), FnQuery::new(entities))
+//     }
+// }
+
+// impl<'a, F, T> IntoQueryFunction<FnQuery<'a, T>> for F
+// where
+//     F: Fn(FnQuery<'_, T>),
+//     T: Any,
+//     // T1: Any, T2: Any
+// {
+//     fn run(self, entities: &Entities) {
+//         self(FnQuery::new(entities))
+//     }
+// }
+
+
+
 /**
 The type of the function parameter of an immutable function query. See [FnQueryMut](struct.FnQueryMut.html)
 for the mutable implementation of this type.
@@ -124,9 +204,9 @@ impl<'a> Query<'a> {
      */
     pub fn query_fn<F, T: 'a>(&self, gen: F)
     where
-        F: Fn(FnQuery<'a, T>),
+        F: IntoQueryFunction<'a, T>
     {
-        gen(FnQuery::new(&self.entities))
+        gen.run(self.entities)
     }
 }
 

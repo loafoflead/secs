@@ -17,6 +17,8 @@ fn query_functions() -> Result<()> {
     query.query_fn(&update_healths);
     query.query_fn(&update_enemies);
 
+    query.query_fn(&update_healths_and_positions_seperately);
+
     Ok(())
 }
 
@@ -27,8 +29,8 @@ fn query_functions_mut() -> Result<()> {
     let query = world.query();
     
     query.query_fn(&update_healths);
-    query.query_fn_mut(&change_healths);
-    query.query_fn(&update_healths);
+    query.query_fn(&change_healths);
+    query.query_fn(update_healths);
 
     Ok(())
 }
@@ -42,6 +44,16 @@ fn change_healths(health: FnQueryMut<Health>) {
 fn update_healths(healths: FnQuery<Health>) {
     for thing in healths.into_iter() {
         println!("{:?}", thing);
+    }
+}
+
+fn update_healths_and_positions_seperately(healths: FnQuery<Health>, positions: FnQueryMut<Position>) {
+    for hp in healths.into_iter() {
+        println!("Health at {:?}", hp);
+    }
+    for mut pos in positions.into_iter() {
+        pos.0 += 12;
+        println!("is {:?}", pos);
     }
 }
 
