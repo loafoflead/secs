@@ -252,6 +252,48 @@ where T: Any,
     }
 }
 
+impl<'a, T: 'static> std::iter::IntoIterator for &'a FnQuery<'a, T>
+where T: Any,
+{
+    type IntoIter = FnQueryIntoIterator<'a, Ref<'a, T>>;
+    type Item = Ref<'a, T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        let typeid = TypeId::of::<T>();
+
+        let selfmap = self.entities.bit_masks.get(&typeid).unwrap();
+
+        let all_components = self.entities.components.get(&typeid).unwrap();
+        // get all components with the type of this AutoQuery
+
+        // get all valid components (not deleted or None)
+        let components = all_components.into_iter().enumerate()
+            .map(|(ind, c)| {
+                if (self.entities.map[ind] & selfmap == *selfmap) && c.is_some() {
+                    Some(c.as_ref().unwrap())
+                } else {
+                    None
+                }
+            })
+            .flatten()
+            .collect::<Vec<&Rc<RefCell<dyn Any>>>>();
+
+        FnQueryIntoIterator {
+            components: components.into_iter()
+                .map(|c| {
+                    let component = c.as_ref();
+                    let borrow = component.borrow();
+
+                    Ref::map(borrow, |any| {
+                        any.downcast_ref::<T>().unwrap()
+                    })
+                })
+                .collect::<Vec<Ref<T>>>(),
+            phantom: PhantomData
+        }
+    }
+}
+
 
 
 impl<'a, T: 'a, T2: 'a> FnQuery<'a, (T, T2)>
@@ -259,7 +301,7 @@ where
     T: Any,
     T2: Any,
 {
-    pub fn iter(self) -> FnQueryIntoIterator<'a, (Ref<'a, T>, Ref<'a, T2>)> {
+    pub fn iter(&self) -> FnQueryIntoIterator<'a, (Ref<'a, T>, Ref<'a, T2>)> {
         let typeid1 = TypeId::of::<T>();
         let typeid2 = TypeId::of::<T2>();
 
@@ -324,7 +366,7 @@ where
     T2: Any,
     T3: Any,
 {
-    pub fn iter(self) -> FnQueryIntoIterator<'a, (Ref<'a, T>, Ref<'a, T2>, Ref<'a, T3>)> {
+    pub fn iter(&self) -> FnQueryIntoIterator<'a, (Ref<'a, T>, Ref<'a, T2>, Ref<'a, T3>)> {
         let typeid1 = TypeId::of::<T>();
         let typeid2 = TypeId::of::<T2>();
         let typeid3 = TypeId::of::<T3>();

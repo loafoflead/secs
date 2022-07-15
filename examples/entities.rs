@@ -161,7 +161,10 @@ fn main() -> Result<()> {
 }
 
 fn print_healths_and_speeds(healths: FnQuery<Health>, speeds: FnQuery<Speed>) {
-    for health in healths.into_iter() {
+    for health in &healths {
+        println!("{:?}", health);
+    }
+    for health in &healths {
         println!("{:?}", health);
     }
     for speed in speeds.into_iter() {

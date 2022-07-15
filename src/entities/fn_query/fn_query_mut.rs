@@ -159,7 +159,7 @@ impl<'a, T> FnQueryMut<'a, T> {
 //     }
 // }
 
-impl<'a, T: 'static> std::iter::IntoIterator for FnQueryMut<'a, T>
+impl<'a, T: 'static> std::iter::IntoIterator for &'a FnQueryMut<'a, T>
 where T: Any,
 {
     type IntoIter = FnQueryIntoIterator<'a, RefMut<'a, T>>;
@@ -208,7 +208,7 @@ where
     T: Any,
     T2: Any,
 {
-    pub fn iter(self) -> FnQueryIntoIterator<'a, (RefMut<'a, T>, RefMut<'a, T2>)> {
+    pub fn iter(&self) -> FnQueryIntoIterator<'a, (RefMut<'a, T>, RefMut<'a, T2>)> {
         let typeid1 = TypeId::of::<T>();
         let typeid2 = TypeId::of::<T2>();
 
@@ -273,7 +273,7 @@ where
     T2: Any,
     T3: Any,
 {
-    pub fn iter(self) -> FnQueryIntoIterator<'a, (RefMut<'a, T>, RefMut<'a, T2>, RefMut<'a, T3>)> {
+    pub fn iter(&self) -> FnQueryIntoIterator<'a, (RefMut<'a, T>, RefMut<'a, T2>, RefMut<'a, T3>)> {
         let typeid1 = TypeId::of::<T>();
         let typeid2 = TypeId::of::<T2>();
         let typeid3 = TypeId::of::<T3>();
