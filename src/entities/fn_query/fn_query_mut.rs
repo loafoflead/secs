@@ -105,7 +105,7 @@ let mut world = World::new();
 world.spawn().insert(Health(10));
 
 let query = world.query();
-query.query_fn_mut(&change_healths); // runs this function with the querys result as a parameter.
+query.query_fn(&change_healths); // runs this function with the querys result as a parameter.
 ```
 
 As of now the struct can handle up to three parameters in a query in the form of a tuple:
@@ -130,7 +130,7 @@ let mut world = World::new();
 world.spawn().insert(Health(10)).insert(Speed(65)).insert(Size(15));
 
 let query = world.query();
-query.query_fn_mut(&change_all); // runs this function with the querys result as a parameter.
+query.query_fn(&change_all); // runs this function with the querys result as a parameter.
 ```
  */
 pub struct FnQueryMut<'a, T> {
