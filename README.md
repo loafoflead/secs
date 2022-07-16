@@ -69,4 +69,10 @@ programmer you probably have them installed already, libc and stuff like that, o
 
 I may test it sometime, I have WSL on my laptop.
 
+# Note
+
+There are some limitations with this library, the main ones being related to Query Functions. 
+It goes without saying that you shouldn't use this crate to make an actually serious project, but 
+you should check the Query Functions docs anyway, since it shows the limitations.
+
 Happy ecs-ing!

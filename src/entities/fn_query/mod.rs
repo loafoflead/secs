@@ -103,14 +103,14 @@ usually isn't an issue, unless you want to do something like this:
 
 ```
 // this is just an example, I will use Vec<>s for demonstration purposes
-let mut_vec = vec![5, 6, 5];
+let mut mut_vec = vec![5, 6, 5];
 let immut_vec = vec![8, 12, 15];
 
 for i in immut_vec {
     // <- in fact, it will fail here, because calling 'borrow_mut' on a Rc<RefCell<_>> 
     // that's immutably borrowed causes a panic!().
-    for i2 in mut_vec {
-        i2 += i; // this will fail
+    for mut i2 in &mut mut_vec {
+        *i2 += i; // this will fail
     }
 }
 ```
