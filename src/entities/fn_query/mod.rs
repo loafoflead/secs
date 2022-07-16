@@ -95,6 +95,38 @@ for the mutable implementation of this type.
 
 This struct permits the use of [Query::query_fn], where a function is passed into a query to execute it.
 
+# Limitations
+
+Unfortunately, due to the nature of how interior mutability is executed in SCELLER (using Rc<RefCell<_>>)
+You can't have a mutable and immutable reference in scope at the same time. This
+usually isn't an issue, unless you want to do something like this:
+
+```
+// this is just an example, I will use Vec<>s for demonstration purposes
+let mut_vec = vec![5, 6, 5];
+let immut_vec = vec![8, 12, 15];
+
+for i in immut_vec {
+    // <- in fact, it will fail here, because calling 'borrow_mut' on a Rc<RefCell<_>> 
+    // that's immutably borrowed causes a panic!().
+    for i2 in mut_vec {
+        i2 += i; // this will fail
+    }
+}
+```
+
+Of course, this isn't ideal, and I will try and solve this problem in future version of SCELLER.
+I don't really have any ideas on how to do this however, although on the plus side I would be moving
+away from the sphere of the original tutorial so that's a plus.
+
+So far, I understand that RefCell<T> uses the ```UnsafeCell``` type for interior mutability, but I'm 
+a little wary of writing my own interface with unsafe code. (I am not a very good programmer)
+
+Another solution would be to actually just make a whole copy of the vector of components when borrowing immutably, but that 
+would be a bit annoying and would require each component to implement Copy or Clone, and I personally 
+don't think my diligent users would be pleased with that restriction. Also it would not in fact fix the problem 
+if someone decided to borrow mutably twice.
+
 # Examples
 
 ```
