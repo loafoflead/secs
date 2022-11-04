@@ -3,14 +3,14 @@ use std::{marker::PhantomData, cell::{Ref, RefMut, RefCell}, any::{TypeId, Any},
 use super::{Entities};
 
 /**
-AutoQuery is a struct that allows quick access of every instance of a single component immutably.
-(The mutable variant is [AutoQueryMut](struct.AutoQueryMut.html))
+    AutoQuery is a struct that allows quick access of every instance of a single component immutably.
+    (The mutable variant is [AutoQueryMut](struct.AutoQueryMut.html))
 
-It contains 'phantom' which is a PhantomData<T>, since the query needs to contain a type 
-for ease of use. And a reference to 'Entities'. 
+    It contains 'phantom' which is a PhantomData<T>, since the query needs to contain a type 
+    for ease of use. And a reference to 'Entities'. 
 
-Pretty much all of this struct's functionality is implmenting IntoIterator, in which 
-the reference to Entities is used to get all components of the AutoQuery's type 'T'.
+    Pretty much all of this struct's functionality is implmenting IntoIterator, in which 
+    the reference to Entities is used to get all components of the AutoQuery's type 'T'.
  */
 pub struct AutoQuery<'a, T: Any> 
 {

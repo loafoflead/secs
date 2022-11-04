@@ -10,6 +10,20 @@ struct Enemy;
 struct PlayerResource(String);
 
 #[test]
+fn test_mutable_iteration() -> Result<()> {
+    let world = init_world()?;
+
+    let query = world.query();
+    query.query_fn(mutability_test);
+
+    Ok(())
+}
+
+fn mutability_test(healths: FnQueryMut<Health>) {
+    
+}
+
+#[test]
 fn query_functions() -> Result<()> {
     let world = init_world()?;
 
@@ -28,9 +42,9 @@ fn query_functions_mut() -> Result<()> {
 
     let query = world.query();
     
-    query.query_fn(&update_healths);
-    query.query_fn(&change_healths);
     query.query_fn(update_healths);
+    query.query_fn(change_healths);
+    query.query_fn(update_healths_and_positions_seperately);
 
     Ok(())
 }
@@ -47,10 +61,12 @@ fn update_healths(healths: FnQuery<Health>) {
     }
 }
 
-fn update_healths_and_positions_seperately(healths: FnQuery<Health>, positions: FnQueryMut<Position>) {
-    for hp in healths.into_iter() {
+fn update_healths_and_positions_seperately(healths: FnQueryMut<Health>, positions: FnQueryMut<Position>) {
+    for mut hp in healths.into_iter() {
         println!("Health at {:?}", hp);
+        hp.0 += 12;
     }
+
     for mut pos in positions.into_iter() {
         pos.0 += 12;
         println!("is {:?}", pos);

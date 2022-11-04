@@ -189,7 +189,13 @@ where T: Any,
             components: components.into_iter()
                 .map(|c| {
                     let component = c.as_ref();
-                    let borrow_mut = component.borrow_mut();
+                    let borrow_mut = if let Ok(borrow) = component.try_borrow_mut() {
+                        borrow
+                    } else {
+                        panic!("Attempt to use data that is already borrowed, either mutably \
+                            borrowing immutably or mutably borrowed data or vice versa. \
+                            (basically breaking the Rust memory rules :[)");
+                    };
 
                     RefMut::map(borrow_mut, |any| {
                         any.downcast_mut::<T>().unwrap()
