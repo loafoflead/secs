@@ -1,8 +1,8 @@
 use sceller::prelude::*;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 struct Position(i32, i32);
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 struct Health(u16);
 #[derive(Debug)]
 struct Enemy;
@@ -10,74 +10,204 @@ struct Enemy;
 struct PlayerResource(String);
 
 #[test]
-fn test_mutable_iteration() -> Result<()> {
+fn test_fn_query() -> Result<()> {
     let world = init_world()?;
 
     let query = world.query();
-    query.query_fn(mutability_test);
+
+    query.query_fn(list_healths);
 
     Ok(())
 }
 
-fn mutability_test(healths: FnQueryMut<Health>) {
-    
+fn list_healths(hps: FnQuery<&Health>) {
+    let mut iter = hps.iter();
+
+    assert_eq!(iter.next().unwrap().0, 12);
+    assert_eq!(iter.next().unwrap().0, 6);
+    assert_eq!(iter.next().unwrap().0, 15);
 }
 
 #[test]
-fn query_functions() -> Result<()> {
+fn test_mut_fn_query() -> Result<()> {
     let world = init_world()?;
 
     let query = world.query();
-    query.query_fn(&update_healths);
-    query.query_fn(&update_enemies);
 
-    query.query_fn(&update_healths_and_positions_seperately);
+    query.query_fn(list_healths);
+    query.query_fn(edit_healths);
+    query.query_fn(list_new_healths);
 
     Ok(())
+}
+
+fn edit_healths(hps: FnQuery<&mut Health>) {
+    for mut i in hps.iter() {
+        i.0 += 1;
+    }
+}
+
+fn list_new_healths(hps: FnQuery<&Health>) {
+    let mut iter = hps.iter();
+
+    assert_eq!(iter.next().unwrap().0, 13);
+    assert_eq!(iter.next().unwrap().0, 7);
+    assert_eq!(iter.next().unwrap().0, 16);
 }
 
 #[test]
-fn query_functions_mut() -> Result<()> {
+fn test_tuple_fn_query() -> Result<()> {
     let world = init_world()?;
 
     let query = world.query();
-    
-    query.query_fn(update_healths);
-    query.query_fn(change_healths);
-    query.query_fn(update_healths_and_positions_seperately);
+
+    query.query_fn(list_healths_and_poses);
+    query.query_fn(one_mut_and_one_not);
+    query.query_fn(two_mut);
+    query.query_fn(make_sure);
+
+    query.query_fn(test_intoiter);
 
     Ok(())
 }
 
-fn change_healths(health: FnQueryMut<Health>) {
-    for mut hp in health.into_iter() {
-        hp.0 += 10;
+fn list_healths_and_poses(query: FnQuery<(&Health, &Position)>) {
+    let mut iter = query.iter();
+
+    let (hp, pos) = iter.next().unwrap();
+    assert_eq!(*hp, Health(12));
+    assert_eq!(*pos, Position(6, 6));
+
+    let (hp, pos) = iter.next().unwrap();
+    assert_eq!(*hp, Health(6));
+    assert_eq!(*pos, Position(12, 10));
+
+    let (hp, pos) = iter.next().unwrap();
+    assert_eq!(*hp, Health(15));
+    assert_eq!(*pos, Position(0, 0));
+}
+
+fn one_mut_and_one_not(query: FnQuery<(&mut Health, &Position)>) {
+    for (mut h, _) in query.iter() {
+        h.0 += 1;
     }
 }
 
-fn update_healths(healths: FnQuery<Health>) {
-    for thing in healths.into_iter() {
-        println!("{:?}", thing);
+fn two_mut(query: FnQuery<(&mut Health, &mut Position)>) {
+    for (mut h, mut pos) in query.iter() {
+        h.0 += 1;
+        pos.1 = 3;
     }
 }
 
-fn update_healths_and_positions_seperately(healths: FnQueryMut<Health>, positions: FnQueryMut<Position>) {
-    for mut hp in healths.into_iter() {
-        println!("Health at {:?}", hp);
-        hp.0 += 12;
-    }
+fn make_sure(query: FnQuery<(&Health, &Position)>) {
+    let mut iter = query.iter();
 
-    for mut pos in positions.into_iter() {
-        pos.0 += 12;
-        println!("is {:?}", pos);
+    let (hp, pos) = iter.next().unwrap();
+    assert_eq!(*hp, Health(14));
+    assert_eq!(*pos, Position(6, 3));
+
+    let (hp, pos) = iter.next().unwrap();
+    assert_eq!(*hp, Health(8));
+    assert_eq!(*pos, Position(12, 3));
+
+    let (hp, pos) = iter.next().unwrap();
+    assert_eq!(*hp, Health(17));
+    assert_eq!(*pos, Position(0, 3));
+}
+
+fn test_intoiter(query: FnQuery<(&Health, &Position, &mut Enemy)>) {
+    for q in query {
+        println!("{}", q.0.0);
     }
 }
 
-fn update_enemies(enemies: FnQuery<(Enemy, Health, Position)>) {
-    for (_, hp, pos) in enemies.iter() {
-        println!("Enemy: {:?}, {:?}", hp, pos);
-    }
-}
+// #[test]
+// fn test_mutable_iteration() -> Result<()> {
+//     let world = init_world()?;
+
+//     let query = world.query();
+//     query.query_fn(mutability_test);
+
+//     Ok(())
+// }
+
+// fn mutability_test(healths: FnQueryMut<Health>) {
+//     let copy = healths.clone();
+
+//     for h in &healths {
+//         for mut h2 in &healths {
+//             h2.0 += h.0;
+//         }
+//     }
+// }
+
+// #[test]
+// fn query_functions() -> Result<()> {
+//     let world = init_world()?;
+
+//     let query = world.query();
+//     query.query_fn(&update_healths);
+//     query.query_fn(&update_enemies);
+
+//     query.query_fn(&update_healths_and_positions_seperately);
+
+//     Ok(())
+// }
+
+// #[test]
+// fn query_functions_mut() -> Result<()> {
+//     let world = init_world()?;
+
+//     let query = world.query();
+
+//     // test(|h: &Health| { print!("hi") });
+
+//     // <&Health as FnQueryType>::map_ref(&std::cell::RefCell::new(5));
+
+//     query.query_fn(update_healths);
+//     query.query_fn(change_healths);
+//     query.query_fn(update_healths_and_positions_seperately);
+
+//     Ok(())
+// }
+
+// fn change_healths(health: FnQuery<&Health>) {
+//     for hp in health.into_iter() {
+//         hp.0;
+//     }
+// }
+
+// // fn test<'a, T>(h: fn(T)) 
+// // where T: FnQueryType<'a>
+// // {
+// //     T::map_ref(&std::cell::RefCell::new(5));
+// // }
+
+// fn update_healths(healths: FnQuery<&mut Health>) {
+//     for mut thing in &healths {
+//         println!("{:?}", thing);
+//         thing.0 += 5;
+//     }
+// }
+
+// fn update_healths_and_positions_seperately(healths: FnQuery<Health>, positions: FnQuery<Position>) {
+//     for mut hp in healths.into_iter() {
+//         println!("Health at {:?}", hp);
+//         hp.0 += 12;
+//     }
+
+//     for mut pos in positions.into_iter() {
+//         pos.0 += 12;
+//         println!("is {:?}", pos);
+//     }
+// }
+
+// fn update_enemies(enemies: FnQuery<(&mut Enemy, &Health)>) {
+//     for (mut enem, hp) in enemies.iter() {
+//         println!("Enemy: {:?}, ", hp);
+//     }
+// }
 
 #[test]
 fn auto_querys() -> Result<()> {

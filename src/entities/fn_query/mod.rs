@@ -147,37 +147,6 @@ pub trait FnQueryContainedIndividualType<'a>
     fn map_ref(reference: &'a RefCell<dyn Any>) -> Self::ReturnType;
 }
 
-// fn map_thing<'a, Type: Any>(entities: &'a Entities) -> Vec<Ref<Type>> {
-//         let typeid = TypeId::of::<Type>();
-
-//         let selfmap = entities.bit_masks.get(&typeid).unwrap();
-
-//         let all_components = entities.components.get(&typeid).unwrap();
-//         // get all components with the type of this AutoQuery
-
-//         // get all valid components (not deleted or None)
-//         let components = all_components.into_iter().enumerate()
-//             .map(|(ind, c)| {
-//                 if (entities.map[ind] & selfmap == *selfmap) && c.is_some() {
-//                     Some(c.as_ref().unwrap())
-//                 } else {
-//                     None
-//                 }
-//             })
-//             .flatten()
-//             .collect::<Vec<&Rc<RefCell<dyn Any>>>>();
-
-//         components.into_iter().map(|component| {
-//             map_ref::<Type>(&component.as_ref())
-//         }).collect()
-//     }
-
-// fn map_ref<T: Any>(reference: &RefCell<dyn Any>) -> Ref<T> {
-//     Ref::map(reference.borrow(), |any| {
-//         any.downcast_ref::<T>().unwrap()
-//     })
-// }
-
 impl<'a, T: Any> FnQueryContainedIndividualType<'a> for &T 
 {
     type ReturnType = Ref<'a, T>;
