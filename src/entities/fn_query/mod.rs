@@ -1,265 +1,136 @@
-mod fn_query_mut;
-pub use fn_query_mut::*;
-
 use std::{
     any::{Any, TypeId},
-    cell::{Ref, RefCell},
-    marker::PhantomData, rc::Rc,
+    cell::{Ref, RefCell, RefMut},
+    marker::PhantomData, rc::Rc
 };
 
 use super::{Entities, Query};
 
-trait FnQueryParams<'a>
-{  
-    fn get(entities: &'a Entities) -> Self where Self: Sized;
-}
-
-impl<'a, T> FnQueryParams<'a> for FnQuery<'a, T> {
-    fn get(entities: &'a Entities) -> Self {
-        Self::new(entities) // because this is the generic constructor for FnQuery
-    }
-}
-
-impl<'a, F, T> IntoQueryFunction<'a, T> for F
-where 
-    T: FnQueryParams<'a>,
-    F: Fn(T),
-{
-    fn run(self, entities: &'a Entities) {
-        (self)(FnQueryParams::get(entities))
-    }
-}
-impl<'a, Func, T1, T2> IntoQueryFunction<'a, (T1, T2)> for Func
-where
-    Func: Fn(T1, T2),
-    T1: FnQueryParams<'a>, T2: FnQueryParams<'a>,
-{
-    fn run(self, entities: &'a Entities) {
-        (self)(FnQueryParams::get(entities), FnQueryParams::get(entities))
-    }
-}
-impl<'a, Func, T1, T2, T3> IntoQueryFunction<'a, (T1, T2, T3)> for Func
-where
-    Func: Fn(T1, T2, T3),
-    T1: FnQueryParams<'a>, T2: FnQueryParams<'a>,
-    T3: FnQueryParams<'a>,
-{
-    fn run(self, entities: &'a Entities) {
-        (self)(
-            FnQueryParams::get(entities), 
-            FnQueryParams::get(entities),
-            FnQueryParams::get(entities)
-        )
-    }
-}
-
-
-pub trait IntoQueryFunction<'a, ArgList> {
-    fn run(self, entities: &'a Entities);
-}
-
-// impl<'a, 'b, 'c, Func, T, T2> IntoQueryFunction<(FnQuery<'a, T>, FnQuery<'b, T2>)> for Func
-// where
-//     Func: for<'r, 's> Fn(FnQuery<'r, T>, FnQuery<'s, T2>),
-// {
-//     fn run(self, entities: &Entities) {
-//         (self)(FnQuery::new(entities), FnQuery::new(entities))
-//     }
-// }
-
-// impl<Func, T, T2, T3> IntoQueryFunction<(FnQuery<'_, T>, FnQuery<'_, T2>, FnQuery<'_, T3>)> for Func
-// where
-//     Func: for<'r, 's, 'e> Fn(FnQuery<'r, T>, FnQuery<'s, T2>, FnQuery<'e, T3>),
-// {
-//     fn run(self, entities: &Entities) {
-//         (self)(FnQuery::new(entities), FnQuery::new(entities), FnQuery::new(entities))
-//     }
-// }
-
-// impl<'a, F, T> IntoQueryFunction<FnQuery<'a, T>> for F
-// where
-//     F: Fn(FnQuery<'_, T>),
-//     T: Any,
-//     // T1: Any, T2: Any
-// {
-//     fn run(self, entities: &Entities) {
-//         self(FnQuery::new(entities))
-//     }
-// }
-
-
-
-/**
-The type of the function parameter of an immutable function query. See [FnQueryMut](struct.FnQueryMut.html)
-for the mutable implementation of this type.
-
-This struct permits the use of [Query::query_fn], where a function is passed into a query to execute it.
-
-# Limitations
-
-Unfortunately, due to the nature of how interior mutability is executed in SCELLER (using Rc<RefCell<_>>)
-You can't have a mutable and immutable reference in scope at the same time. This
-usually isn't an issue, unless you want to do something like this:
-
-```
-// this is just an example, I will use Vec<>s for demonstration purposes
-let mut mut_vec = vec![5, 6, 5];
-let immut_vec = vec![8, 12, 15];
-
-for i in immut_vec {
-    // <- in fact, it will fail here, because calling 'borrow_mut' on a Rc<RefCell<_>> 
-    // that's immutably borrowed causes a panic!().
-    for mut i2 in &mut mut_vec {
-        *i2 += i; // this will fail
-    }
-}
-```
-
-Of course, this isn't ideal, and I will try and solve this problem in future version of SCELLER.
-I don't really have any ideas on how to do this however, although on the plus side I would be moving
-away from the sphere of the original tutorial so that's a plus.
-
-So far, I understand that RefCell<T> uses the ```UnsafeCell``` type for interior mutability, but I'm 
-a little wary of writing my own interface with unsafe code. (I am not a very good programmer)
-
-Another solution would be to actually just make a whole copy of the vector of components when borrowing immutably, but that 
-would be a bit annoying and would require each component to implement Copy or Clone, and I personally 
-don't think my diligent users would be pleased with that restriction. Also it would not in fact fix the problem 
-if someone decided to borrow mutably twice.
-
-# Examples
-
-```
-use sceller::prelude::*;
-
-struct Health(u32);
-
-fn print_healths(healths: FnQuery<Health>) {
-    for hp in healths.into_iter() {
-        println!("{}", hp.0);
-    }
-}
-
-let mut world = World::new();
-
-world.spawn().insert(Health(10));
-
-let query = world.query();
-query.query_fn(&print_healths); // runs this function with the querys result as a parameter.
-```
-
-As of now the struct can handle up to three parameters in a query in the form of a tuple:
-
-```
-use sceller::prelude::*;
-
-struct Health(u32);
-struct Speed(u32);
-struct Size(u32);
-
-fn print_all(healths: FnQuery<(Health, Speed, Size)>) {
-    for (hp, speed, size) in healths.iter() {
-        println!("{}, {}, {}", hp.0, speed.0, size.0);
-    }
-}
-
-let mut world = World::new();
-
-world.spawn().insert(Health(10)).insert(Speed(65)).insert(Size(15));
-
-let query = world.query();
-query.query_fn(&print_all); // runs this function with the querys result as a parameter.
-```
- */
-pub struct FnQuery<'a, T> {
-    entities: &'a Entities,
-    phantom: PhantomData<T>,
-}
-
-impl<'a, T> FnQuery<'a, T> {
-    fn new(entities: &'a Entities) -> FnQuery<'a, T> {
-        FnQuery {
-            entities: entities,
-            phantom: PhantomData,
-        }
-    }
-}
-
-// Implementation of actual functions
 impl<'a> Query<'a> {
-    /**
-    Takes in a function to run with the query's result passed as parameters.
-
-    # Examples
-
-    ```
-    use sceller::prelude::*;
-
-    struct Health(u32);
-
-    fn print_healths(healths: FnQuery<Health>) {
-        for hp in healths.into_iter() {
-            println!("{}", hp.0);
-        }
-    }
-
-    let mut world = World::new();
-
-    world.spawn().insert(Health(10));
-
-    let query = world.query();
-    query.query_fn(&print_healths); // runs this function with the querys result as a parameter.
-    ```
-
-    As of now the struct can handle up to three parameters in a query in the form of a tuple:
-
-    ```
-    use sceller::prelude::*;
-
-    struct Health(u32);
-    struct Speed(u32);
-    struct Size(u32);
-
-    fn print_all(healths: FnQuery<(Health, Speed, Size)>) {
-        for (hp, speed, size) in healths.iter() {
-            println!("{}, {}, {}", hp.0, speed.0, size.0);
-        }
-    }
-
-    let mut world = World::new();
-
-    world.spawn().insert(Health(10)).insert(Speed(65)).insert(Size(15));
-
-    let query = world.query();
-    query.query_fn(&print_all); // runs this function with the querys result as a parameter.
-    ```
-     */
     pub fn query_fn<F, T: 'a>(&self, gen: F)
     where
-        F: IntoQueryFunction<'a, T>
+        F: IntoFnQuery<'a, T>
     {
         gen.run(self.entities)
     }
 }
 
-impl<'a, T: 'static> std::iter::IntoIterator for FnQuery<'a, T>
-where T: Any,
+//
+// A Query type used inside of Query Functions
+//
+// e.g: fn query_healths(healths: FnQuery<&Health>) { ... }
+//
+pub struct FnQuery<'a, T> {
+    entities: &'a Entities,
+    phantom: PhantomData<&'a T>,
+}
+
+impl<'a, T> FnQuery<'a, T> {
+    pub fn new(entities: &'a Entities) -> Self {
+        Self {
+            entities, phantom: PhantomData
+        }
+    }
+}
+
+// A trait implemented for any functions that can be run as queries
+pub trait IntoFnQuery<'a, Arguments> {
+    fn run(self, entities: &'a Entities);
+}
+
+// a trait that abstracts over all FnQuery types in query parameters or singular values,
+// e.g: FnQuery<(&Health, &Damage)>, FnQuery<&Health>
+// so that they can all be stored as one type
+pub trait QueryParameterType<'a> {
+    fn get(entities: &'a Entities) -> Self where Self: Sized;
+}
+
+/* 
+    FnQuery<(Anything...)> is now abstracted by this type!!! 
+    this means we can get an FnQuery<T> from the functions parameter
+*/
+impl<'a, T> QueryParameterType<'a> for FnQuery<'a, T> 
+where T: FnQueryContainedTupleType<'a>
 {
-    type IntoIter = FnQueryIntoIterator<'a, Ref<'a, T>>;
-    type Item = Ref<'a, T>;
+    // in any query function we can now say FnQuery::get(entities)
+    fn get(entities: &'a Entities) -> Self where Self: Sized {
+        Self::new(entities)
+    }
+}
 
-    fn into_iter(self) -> Self::IntoIter {
-        let typeid = TypeId::of::<T>();
+// trait that abstracts over whether the type contained in an FnQuery<T> 
+// is a tuple and of what size
+pub trait FnQueryContainedTupleType<'a> {
+    type ReturnType;
 
-        let selfmap = self.entities.bit_masks.get(&typeid).unwrap();
+    fn map(entities: &'a Entities) -> Vec<Self::ReturnType>;
+}
 
-        let all_components = self.entities.components.get(&typeid).unwrap();
+/*
+    Implements containedTupleType for any given type that is an individual type so
+    that we can use this abstraction over everything
+*/  
+impl<'a, T> FnQueryContainedTupleType<'a> for T
+where T: FnQueryContainedIndividualType<'a>
+{
+    type ReturnType = T::ReturnType;
+
+    fn map(entities: &'a Entities) -> Vec<Self::ReturnType> {
+        T::map(entities)
+    }
+}
+
+impl<'a, T1, T2> FnQueryContainedTupleType<'a> for (T1, T2)
+where 
+    T1: FnQueryContainedIndividualType<'a>,
+    T2: FnQueryContainedIndividualType<'a>,
+{
+    type ReturnType = (T1::ReturnType, T2::ReturnType);
+
+    fn map(entities: &'a Entities) -> Vec<Self::ReturnType> {
+        T1::map(entities).into_iter().zip(T2::map(entities)).collect()
+    }
+}
+
+impl<'a, T1, T2, T3> FnQueryContainedTupleType<'a> for (T1, T2, T3)
+where 
+    T1: FnQueryContainedIndividualType<'a>,
+    T2: FnQueryContainedIndividualType<'a>,
+    T3: FnQueryContainedIndividualType<'a>,
+{
+    type ReturnType = (T1::ReturnType, T2::ReturnType, T3::ReturnType);
+
+    fn map(entities: &'a Entities) -> Vec<Self::ReturnType> {
+        T1::map(entities).into_iter()
+            .zip(T2::map(entities))
+            .zip(T3::map(entities))
+            .map(|((x, y), z)| (x, y, z))
+            .collect()
+    }
+}
+
+// A trait implemented that abstracts over all the different types 
+// an FnQuery<> can contain:
+//
+// e.g: fn query(hps: FnQuery<&Health>/<&mut Health>)
+pub trait FnQueryContainedIndividualType<'a> 
+{
+    type ReturnType;
+
+    fn type_id_new() -> TypeId;
+
+    fn map(entities: &'a Entities) -> Vec<Self::ReturnType> {
+        let typeid = Self::type_id_new();
+
+        let selfmap = entities.bit_masks.get(&typeid).unwrap();
+
+        let all_components = entities.components.get(&typeid).unwrap();
         // get all components with the type of this AutoQuery
 
         // get all valid components (not deleted or None)
         let components = all_components.into_iter().enumerate()
             .map(|(ind, c)| {
-                if (self.entities.map[ind] & selfmap == *selfmap) && c.is_some() {
+                if (entities.map[ind] & selfmap == *selfmap) && c.is_some() {
                     Some(c.as_ref().unwrap())
                 } else {
                     None
@@ -268,213 +139,116 @@ where T: Any,
             .flatten()
             .collect::<Vec<&Rc<RefCell<dyn Any>>>>();
 
-        FnQueryIntoIterator {
-            components: components.into_iter()
-                .map(|c| {
-                    let component = c.as_ref();
-                    let borrow = component.borrow();
+        components.into_iter().map(|component| {
+            Self::map_ref(&component.as_ref())
+        }).collect()
+    }
 
-                    Ref::map(borrow, |any| {
-                        any.downcast_ref::<T>().unwrap()
-                    })
-                })
-                .collect::<Vec<Ref<T>>>(),
-            phantom: PhantomData
+    fn map_ref(reference: &'a RefCell<dyn Any>) -> Self::ReturnType;
+}
+
+// fn map_thing<'a, Type: Any>(entities: &'a Entities) -> Vec<Ref<Type>> {
+//         let typeid = TypeId::of::<Type>();
+
+//         let selfmap = entities.bit_masks.get(&typeid).unwrap();
+
+//         let all_components = entities.components.get(&typeid).unwrap();
+//         // get all components with the type of this AutoQuery
+
+//         // get all valid components (not deleted or None)
+//         let components = all_components.into_iter().enumerate()
+//             .map(|(ind, c)| {
+//                 if (entities.map[ind] & selfmap == *selfmap) && c.is_some() {
+//                     Some(c.as_ref().unwrap())
+//                 } else {
+//                     None
+//                 }
+//             })
+//             .flatten()
+//             .collect::<Vec<&Rc<RefCell<dyn Any>>>>();
+
+//         components.into_iter().map(|component| {
+//             map_ref::<Type>(&component.as_ref())
+//         }).collect()
+//     }
+
+// fn map_ref<T: Any>(reference: &RefCell<dyn Any>) -> Ref<T> {
+//     Ref::map(reference.borrow(), |any| {
+//         any.downcast_ref::<T>().unwrap()
+//     })
+// }
+
+impl<'a, T: Any> FnQueryContainedIndividualType<'a> for &T 
+{
+    type ReturnType = Ref<'a, T>;
+
+    fn type_id_new() -> TypeId {
+        TypeId::of::<T>()
+    }
+
+    fn map_ref(reference: &'a RefCell<dyn Any>) -> Self::ReturnType {
+        Ref::map(reference.borrow(), |any| {
+            any.downcast_ref::<T>().unwrap()
+        })
+    }
+}
+
+impl<'a, T: Any> FnQueryContainedIndividualType<'a> for &mut T 
+{
+    type ReturnType = RefMut<'a, T>;
+
+    fn type_id_new() -> TypeId {
+        TypeId::of::<T>()
+    }
+
+    fn map_ref(reference: &'a RefCell<dyn Any>) -> Self::ReturnType {
+        RefMut::map(reference.borrow_mut(), |any| {
+            any.downcast_mut::<T>().unwrap()
+        })
+    }
+}
+
+impl<'a, T, F> IntoFnQuery<'a, T> for F
+where 
+    T: QueryParameterType<'a>,
+    F: Fn(T),
+{
+    fn run(self, entities: &'a Entities) {
+        (self)(QueryParameterType::get(entities))
+    }
+}
+
+impl<'a, T> FnQuery<'a, T> 
+where T: FnQueryContainedTupleType<'a>
+{
+    pub fn iter(&self) -> FnQueryIterator<'a, T::ReturnType> {
+        FnQueryIterator {
+            components: T::map(self.entities),
+            phantom: PhantomData,
         }
     }
 }
 
-impl<'a, T: 'static> std::iter::IntoIterator for &'a FnQuery<'a, T>
-where T: Any,
+impl<'a, T> std::iter::IntoIterator for FnQuery<'a, T> 
+where T: FnQueryContainedTupleType<'a>
 {
-    type IntoIter = FnQueryIntoIterator<'a, Ref<'a, T>>;
-    type Item = Ref<'a, T>;
+    type Item = T::ReturnType;
+    type IntoIter = FnQueryIterator<'a, T::ReturnType>;
 
     fn into_iter(self) -> Self::IntoIter {
-        let typeid = TypeId::of::<T>();
-
-        let selfmap = self.entities.bit_masks.get(&typeid).unwrap();
-
-        let all_components = self.entities.components.get(&typeid).unwrap();
-        // get all components with the type of this AutoQuery
-
-        // get all valid components (not deleted or None)
-        let components = all_components.into_iter().enumerate()
-            .map(|(ind, c)| {
-                if (self.entities.map[ind] & selfmap == *selfmap) && c.is_some() {
-                    Some(c.as_ref().unwrap())
-                } else {
-                    None
-                }
-            })
-            .flatten()
-            .collect::<Vec<&Rc<RefCell<dyn Any>>>>();
-
-        FnQueryIntoIterator {
-            components: components.into_iter()
-                .map(|c| {
-                    let component = c.as_ref();
-                    let borrow = component.borrow();
-
-                    Ref::map(borrow, |any| {
-                        any.downcast_ref::<T>().unwrap()
-                    })
-                })
-                .collect::<Vec<Ref<T>>>(),
+        FnQueryIterator {
+            components: T::map(self.entities),
             phantom: PhantomData
         }
     }
 }
 
-
-
-impl<'a, T: 'a, T2: 'a> FnQuery<'a, (T, T2)>
-where
-    T: Any,
-    T2: Any,
-{
-    pub fn iter(&self) -> FnQueryIntoIterator<'a, (Ref<'a, T>, Ref<'a, T2>)> {
-        let typeid1 = TypeId::of::<T>();
-        let typeid2 = TypeId::of::<T2>();
-
-        // let selftype_ids = vec![typeid1, typeid2];
-
-        let mut selfmap = self.entities.get_bitmask(&typeid1).unwrap();
-        selfmap |= self.entities.get_bitmask(&typeid2).unwrap();
-
-        let indexes = self
-            .entities
-            .map
-            .iter()
-            .enumerate()
-            .filter_map(|(index, map)| {
-                if map & selfmap == selfmap {
-                    Some(index)
-                } else {
-                    None
-                }
-            })
-            .collect::<Vec<usize>>();
-
-        let mut return_vec = Vec::new();
-
-        // Make this ^^^^ into the return type
-
-        let components = self.entities.components.get(&typeid1).unwrap();
-        let mut query_components = Vec::new();
-        for index in &indexes {
-            query_components.push(components[*index].as_ref());
-        }
-        let query_components1 = query_components.into_iter().flatten().collect::<Vec<_>>();
-
-        let components = self.entities.components.get(&typeid2).unwrap();
-        let mut query_components = Vec::new();
-        for index in &indexes {
-            query_components.push(components[*index].as_ref());
-        }
-        let query_components2 = query_components.into_iter().flatten().collect::<Vec<_>>();
-
-        for i in 0..query_components1.len() {
-            return_vec.push((
-                Ref::map(query_components1[i].as_ref().borrow(), |any| {
-                    any.downcast_ref::<T>().unwrap()
-                }),
-                Ref::map(query_components2[i].as_ref().borrow(), |any| {
-                    any.downcast_ref::<T2>().unwrap()
-                }),
-            ));
-        }
-
-        FnQueryIntoIterator {
-            components: return_vec,
-            phantom: PhantomData,
-        }
-    }
-}
-
-impl<'a, T: 'a, T2: 'a, T3: 'a> FnQuery<'a, (T, T2, T3)>
-where
-    T: Any,
-    T2: Any,
-    T3: Any,
-{
-    pub fn iter(&self) -> FnQueryIntoIterator<'a, (Ref<'a, T>, Ref<'a, T2>, Ref<'a, T3>)> {
-        let typeid1 = TypeId::of::<T>();
-        let typeid2 = TypeId::of::<T2>();
-        let typeid3 = TypeId::of::<T3>();
-
-        // let selftype_ids = vec![typeid1, typeid2];
-
-        let mut selfmap = self.entities.get_bitmask(&typeid1).unwrap();
-        selfmap |= self.entities.get_bitmask(&typeid2).unwrap();
-        selfmap |= self.entities.get_bitmask(&typeid3).unwrap();
-
-        let indexes = self
-            .entities
-            .map
-            .iter()
-            .enumerate()
-            .filter_map(|(index, map)| {
-                if map & selfmap == selfmap {
-                    Some(index)
-                } else {
-                    None
-                }
-            })
-            .collect::<Vec<usize>>();
-
-        let mut return_vec = Vec::new();
-
-        // Make this ^^^^ into the return type
-
-        let components = self.entities.components.get(&typeid1).unwrap();
-        let mut query_components = Vec::new();
-        for index in &indexes {
-            query_components.push(components[*index].as_ref());
-        }
-        let query_components1 = query_components.into_iter().flatten().collect::<Vec<_>>();
-
-        let components = self.entities.components.get(&typeid2).unwrap();
-        let mut query_components = Vec::new();
-        for index in &indexes {
-            query_components.push(components[*index].as_ref());
-        }
-        let query_components2 = query_components.into_iter().flatten().collect::<Vec<_>>();
-
-        let components = self.entities.components.get(&typeid3).unwrap();
-        let mut query_components = Vec::new();
-        for index in &indexes {
-            query_components.push(components[*index].as_ref());
-        }
-        let query_components3 = query_components.into_iter().flatten().collect::<Vec<_>>();
-
-        for i in 0..query_components1.len() {
-            return_vec.push((
-                Ref::map(query_components1[i].as_ref().borrow(), |any| {
-                    any.downcast_ref::<T>().unwrap()
-                }),
-                Ref::map(query_components2[i].as_ref().borrow(), |any| {
-                    any.downcast_ref::<T2>().unwrap()
-                }),
-                Ref::map(query_components3[i].as_ref().borrow(), |any| {
-                    any.downcast_ref::<T3>().unwrap()
-                }),
-            ));
-        }
-
-        FnQueryIntoIterator {
-            components: return_vec,
-            phantom: PhantomData,
-        }
-    }
-}
-
-pub struct FnQueryIntoIterator<'a, T> {
+pub struct FnQueryIterator<'a, T> {
     components: Vec<T>,
     phantom: PhantomData<&'a T>,
 }
 
-impl<'a, T: 'a> std::iter::Iterator for FnQueryIntoIterator<'a, T> {
+impl<'a, T> std::iter::Iterator for FnQueryIterator<'a, T> {
     type Item = T;
 
     fn next(&mut self) -> Option<Self::Item> {

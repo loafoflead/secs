@@ -133,6 +133,7 @@ let query = world.query();
 query.query_fn(&change_all); // runs this function with the querys result as a parameter.
 ```
  */
+#[derive(Debug)]
 pub struct FnQueryMut<'a, T> {
     entities: &'a Entities,
     phantom: PhantomData<T>,
