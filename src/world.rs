@@ -25,6 +25,13 @@ impl World {
         Self::default()
     }
 
+    pub fn run_system<'a, F, T: 'a>(&'a mut self, gen: F)
+    where
+        F: IntoSystem<'a, T>
+    {
+        gen.run(&self.entities, &mut self.resources)
+    }
+
     /**
      Inserts a resource into the World structs inner resource struct. The resource
      can later be retrieved using [get_resource()](struct.World.html#method.get_resource) or [get_resource_mut()](struct.World.html#method.get_resource_mut)
