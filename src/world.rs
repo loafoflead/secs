@@ -3,7 +3,7 @@
 //! The world module contains World, which is a struct that contains Resources and Entities, 
 //! providing functions to interface with them.
 
-use std::{any::Any};
+use std::any::Any;
 
 use crate::prelude::*;
 
@@ -25,11 +25,18 @@ impl World {
         Self::default()
     }
 
-    pub fn run_system<'a, F, T: 'a>(&'a mut self, gen: F)
+    /**
+     * Runs a function that implements the [IntoSystem](trait.IntoSystem) trait. 
+     * 
+     * Ensures that it is passed all of the necessary information, such as
+     * requested resources, or queries. This function's implementation is
+     * built on the code in the [system] module, so check out that for more info. 
+     */
+    pub fn run_system<'a, F, T: 'a>(&'a self, gen: F)
     where
         F: IntoSystem<'a, T>
     {
-        gen.run(&self.entities, &mut self.resources)
+        gen.run(&self.entities, &self.resources)
     }
 
     /**
@@ -39,16 +46,18 @@ impl World {
      ```
      use sceller::prelude::*;
      
+     #[derive(Eq, PartialEq, Debug)]
      struct ImportantResource(String);
-     
-     let mut world = World::new();
-     world.insert_resource(ImportantResource(String::from("This is important")));
-     
-     assert_eq!(
-          world.get_resource::<ImportantResource>().unwrap().0, 
-          String::from("This is important"),
-     )
-     
+
+     {
+         let mut world = World::new();
+         world.insert_resource(ImportantResource(String::from("This is important")));
+         
+         assert_eq!(
+              *world.get_resource::<ImportantResource>().unwrap(), 
+              ImportantResource(String::from("This is important")),
+         );
+     }
      ```
      */
     pub fn insert_resource<T: std::any::Any>(&mut self, res: T) {
@@ -72,7 +81,7 @@ impl World {
      assert_eq!(fps.0, 60);
      ``` 
      */
-    pub fn get_resource<T: Any>(&self) -> eyre::Result<&T> {
+    pub fn get_resource<T: Any>(&self) -> eyre::Result<Ref<T>> {
         self.resources.get_ref()
     }
 
@@ -96,7 +105,7 @@ impl World {
       assert_eq!(thing2.0, 12);
       ```
      */
-    pub fn get_resource_mut<T: Any>(&mut self) -> eyre::Result<&mut T> {
+    pub fn get_resource_mut<T: Any>(&self) -> eyre::Result<RefMut<T>> {
         self.resources.get_mut::<T>()
     }
 

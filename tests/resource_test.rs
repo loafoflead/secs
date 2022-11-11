@@ -17,7 +17,7 @@ fn get_resources_mutably() {
     world.insert_resource(SizeResource(12.0));
     
     {
-        let fps = world.get_resource_mut::<SizeResource>().unwrap();
+        let mut fps = world.get_resource_mut::<SizeResource>().unwrap();
         fps.0 += 12.0;
     }
 

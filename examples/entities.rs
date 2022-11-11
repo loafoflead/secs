@@ -139,7 +139,7 @@ fn main() -> Result<()> {
     println!("Beginning function queries:");
 
     let query = world.query();
-    query.query_fn(&print_healths); // this will execute this function and fill in the query
+    world.run_system(print_healths); // this will execute this function and fill in the query
 
     // this function works the same for Query Functions taking mutable arguments
 
@@ -149,22 +149,22 @@ fn main() -> Result<()> {
     
     // query functions currently support a tuple field of up to three components:
 
-    query.query_fn(&print_two); // this also works with a function with a tuple of three components right now (maybe more later)
+    world.run_system(print_two); // this also works with a function with a tuple of three components right now (maybe more later)
 
     // Query Functions as of now can take up to three arguments as queries:
 
-    query.query_fn(print_healths_and_speeds); // this also works with a query taking three arguments    
+    world.run_system(print_healths_and_speeds); // this also works with a query taking three arguments    
 
     // this can also be done with query_fn_mut, and both types can be combines into a single function
 
     Ok(())
 }
 
-fn print_healths_and_speeds(healths: FnQuery<Health>, speeds: FnQuery<Speed>) {
-    for health in &healths {
+fn print_healths_and_speeds(healths: FnQuery<&Health>, speeds: FnQuery<&Speed>) {
+    for health in healths.iter() {
         println!("{:?}", health);
     }
-    for health in &healths {
+    for health in healths.iter() {
         println!("{:?}", health);
     }
     for speed in speeds.into_iter() {
@@ -172,19 +172,19 @@ fn print_healths_and_speeds(healths: FnQuery<Health>, speeds: FnQuery<Speed>) {
     }
 }
 
-fn print_healths(healths: FnQuery<Health>) {
+fn print_healths(healths: FnQuery<&Health>) {
     for health in healths.into_iter() {
         println!("{:?}", health);
     }
 }
 
-fn change_healths(healths: FnQueryMut<Health>) {
+fn change_healths(healths: FnQuery<&mut Health>) {
     for mut health in healths.into_iter() {
         health.0 += 100;
     }
 }
 
-fn print_two(query: FnQuery<(Speed, Enemy)>) {
+fn print_two(query: FnQuery<(&Speed, &Enemy)>) {
     // support tuple destructuring
     for (speed, _) in query.iter() {
         println!("Enemy: {:?}", speed);

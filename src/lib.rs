@@ -20,11 +20,13 @@
 pub mod resources;
 pub mod world;
 pub mod entities;
+pub mod system;
 
 pub mod prelude {
     pub use super::resources::*;
     pub use super::world::*;
     pub use super::entities::*;
+    pub use super::system::*;
 
     pub use std::cell::{Ref, RefMut};
     pub use eyre::Result;

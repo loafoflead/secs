@@ -4,7 +4,7 @@
 //! any struct or value that is meant to persist globally in the ECS and be accessible
 //! anywhere at any time. Importantly, there can only be ONE of a given resource.
 
-use std::{any::{Any, TypeId}, collections::HashMap};
+use std::{any::{Any, TypeId}, collections::HashMap, rc::Rc, cell::{RefCell, Ref, RefMut}};
 
 #[derive(Default, Debug)]
 /**
@@ -14,7 +14,7 @@ A struct storing a hashmap of type id and value pairs. It is used as a resource 
 the ecs.
  */
 pub struct Resources {
-    values: HashMap<TypeId, Box<dyn Any>>
+    values: HashMap<TypeId, Rc<RefCell<dyn Any>>>
 }
 
 impl Resources {
@@ -52,7 +52,7 @@ impl Resources {
     ```
      */
     pub fn add<T: Any>(&mut self, res: T) {
-        self.values.insert(TypeId::of::<T>(), Box::new(res));
+        self.values.insert(TypeId::of::<T>(), Rc::new(RefCell::new(res)));
     }
 
     /**
@@ -73,10 +73,13 @@ impl Resources {
     assert_eq!(extracted_health.0, 42.0);
     ```
      */
-    pub fn get_ref<T: Any>(&self) -> eyre::Result<&T> {
+    pub fn get_ref<T: Any>(&self) -> eyre::Result<Ref<T>> {
         let type_id = TypeId::of::<T>();
         if let Some(data) = self.values.get(&type_id) {
-            data.downcast_ref().ok_or(ResourcesError::NonexistentResourceError.into())
+            let rf = data.as_ref();
+            let borrow = rf.borrow();
+            // borrow.downcast_ref::<T>().ok_or(ResourcesError::NonexistentResourceError.into())
+            Ok(std::cell::Ref::map(borrow, |any| any.downcast_ref::<T>().unwrap()))
         } else {
             Err(ResourcesError::NonexistentResourceError.into())
         }
@@ -104,9 +107,11 @@ impl Resources {
     assert_eq!(hp.0, 42);
     ```
      */
-    pub fn get_mut<T: Any>(&mut self) -> eyre::Result<&mut T> {
-        if let Some(data) = self.values.get_mut(&TypeId::of::<T>()) {
-            data.downcast_mut().ok_or(ResourcesError::NonexistentResourceError.into())
+    pub fn get_mut<T: Any>(&self) -> eyre::Result<RefMut<T>> {
+        if let Some(data) = self.values.get(&TypeId::of::<T>()) {
+            let rf = data.as_ref();
+            let borrow = rf.borrow_mut();
+            Ok(RefMut::map(borrow, |any| any.downcast_mut::<T>().unwrap()))
         } else {
             Err(ResourcesError::NonexistentResourceError.into())
         }
@@ -124,8 +129,10 @@ impl Resources {
     let mut resources = Resources::new();
     resources.add(Health(123));
     
-    let hp = resources.get_ref::<Health>().unwrap();
-    assert_eq!(hp.0, 123);
+    {
+        let hp = resources.get_ref::<Health>().unwrap();
+        assert_eq!(hp.0, 123);
+    }
     
     resources.delete::<Health>().unwrap();
     assert!(resources.get_ref::<Health>().is_err());
@@ -145,12 +152,16 @@ impl Resources {
     let mut resources = Resources::new();
     resources.add(Health(123));
     
-    let hp = resources.get_ref::<Health>().unwrap();
-    assert_eq!(hp.0, 123);
-    
-    let res = resources.delete::<Health>();
-    assert!(res.is_ok());
-    
+    {
+        let hp = resources.get_ref::<Health>().unwrap();
+        assert_eq!(hp.0, 123);
+    }
+
+    {
+        let res = resources.delete::<Health>();
+        assert!(res.is_ok());
+    }
+
     let res = resources.delete::<No>();
     assert!(!res.is_ok());
     ```
@@ -158,12 +169,26 @@ impl Resources {
     pub fn delete<T: Any>(&mut self) -> eyre::Result<T> {
         if let Some(data) = self.values.remove(&TypeId::of::<T>())
         {
-            // We must have a value by this point, or it would have failed to retrieve it from 
-            // the hashmap. (i hope)
-            Ok(*data.downcast::<T>().unwrap())
+            Ok(
+                RefCell::into_inner(Rc::try_unwrap(downcast_t::<T>(data)).unwrap_or_else(|_| panic!("When removing resource it somehow failed to have the correct type, causing a segfault. bad, very bad")))
+            )
         } else {
             Err(ResourcesError::NonexistentResourceError.into())
         }
+    }
+}
+
+fn downcast_t<T: Any>(
+  rc: Rc<RefCell<dyn Any>>,
+) -> Rc<RefCell<T>> {
+    unsafe {
+        fn _sanity_check(rc: Rc<RefCell<impl Any>>) 
+        -> Rc<RefCell<dyn Any>> 
+        {
+            rc
+        }
+        
+        Rc::from_raw(Rc::into_raw(rc) as *const RefCell<T>)
     }
 }
 
@@ -192,7 +217,7 @@ mod tests {
         resources.add(thing);
 
         let retreived_thing = resources.values.get(&TypeId::of::<Thing>()).unwrap();
-        let thing2 = retreived_thing.downcast_ref::<Thing>().unwrap();
+        let thing2 = std::cell::Ref::map(retreived_thing.as_ref().borrow(), |any| any.downcast_ref::<Thing>().unwrap());
         assert_eq!(thing2.0, 12);
     }
 
@@ -204,7 +229,7 @@ mod tests {
         resources.add(thing);
 
         {
-            let other = resources.get_mut::<Thing>().unwrap();
+            let mut other = resources.get_mut::<Thing>().unwrap();
             other.0 = 129;
         }
         let other = resources.get_ref::<Thing>().unwrap();
